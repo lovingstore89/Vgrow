@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="th" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>VGROW Smart Farming — Marketing Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --fb:#185FA5; --sh:#EE4D2D; --lz:#0F136D;
+  --fb-bg:rgba(24,95,165,0.12); --sh-bg:rgba(238,77,45,0.12); --lz-bg:rgba(15,19,109,0.12);
+  --bg:#f0f4f8; --surface:#ffffff; --surface2:#f8fafc; --border:#e2e8f0;
+  --text:#1a202c; --muted:#64748b; --shadow:0 2px 12px rgba(0,0,0,0.08);
+  --radius:12px; --radius-sm:8px;
+  --green:#10b981; --yellow:#f59e0b; --red:#ef4444; --gray:#94a3b8;
+}
+[data-theme="dark"] {
+  --bg:#0d1117; --surface:#161b22; --surface2:#1c2333; --border:#30363d;
+  --text:#e6edf3; --muted:#8b949e; --shadow:0 2px 12px rgba(0,0,0,0.4);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:var(--bg);color:var(--text);transition:background .3s,color .3s;font-size:14px}
+a{color:inherit;text-decoration:none}
+
+/* NAV */
+nav{position:sticky;top:0;z-index:100;background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;gap:16px;height:60px;box-shadow:var(--shadow)}
+.nav-logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:16px;margin-right:auto}
+.nav-logo span{background:linear-gradient(135deg,#16a34a,#059669);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-size:22px}
+.nav-links{display:flex;gap:4px}
+.nav-links a{padding:6px 12px;border-radius:6px;font-size:13px;color:var(--muted);transition:.2s}
+.nav-links a:hover,.nav-links a.active{background:var(--surface2);color:var(--text)}
+.nav-right{display:flex;align-items:center;gap:10px;margin-left:auto}
+select.month-filter{padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;cursor:pointer}
+.theme-btn{padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;font-size:16px;line-height:1}
+.updated{font-size:11px;color:var(--muted)}
+
+/* LAYOUT */
+main{max-width:1400px;margin:0 auto;padding:24px 16px}
+.section{margin-bottom:40px}
+.section-title{font-size:18px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.section-title .badge{font-size:11px;padding:2px 8px;border-radius:20px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-weight:500}
+
+/* KPI CARDS */
+.kpi-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-bottom:8px}
+@media(max-width:1100px){.kpi-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:600px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+.kpi-card{background:var(--surface);border-radius:var(--radius);padding:18px 16px;border:1px solid var(--border);box-shadow:var(--shadow);transition:.2s;position:relative;overflow:hidden}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--radius) var(--radius) 0 0}
+.kpi-card.spend::before{background:var(--red)}
+.kpi-card.revenue::before{background:var(--green)}
+.kpi-card.roas::before{background:#8b5cf6}
+.kpi-card.orders::before{background:var(--fb)}
+.kpi-card.ctr::before{background:var(--yellow)}
+.kpi-card.cpc::before{background:var(--sh)}
+.kpi-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;font-weight:600}
+.kpi-value{font-size:22px;font-weight:800;line-height:1.2;margin-bottom:4px}
+.kpi-sub{font-size:11px;color:var(--muted)}
+.kpi-delta{font-size:11px;font-weight:600;padding:2px 6px;border-radius:4px;display:inline-block;margin-top:4px}
+.kpi-delta.pos{background:rgba(16,185,129,.12);color:var(--green)}
+.kpi-delta.neg{background:rgba(239,68,68,.12);color:var(--red)}
+/* MONTH TABS */
+.month-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;padding:14px 16px;background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow);align-items:center}
+.month-tabs-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-right:4px;white-space:nowrap}
+.month-tab{padding:7px 18px;border-radius:20px;border:1.5px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;font-size:12.5px;font-weight:600;transition:.18s;white-space:nowrap;line-height:1.3}
+.month-tab:hover{border-color:var(--text);color:var(--text);background:var(--surface)}
+.month-tab.active{background:var(--text);color:var(--surface);border-color:var(--text);box-shadow:0 2px 8px rgba(0,0,0,.15)}
+/* KPI BREAKDOWN */
+.kpi-breakdown{display:flex;flex-wrap:wrap;gap:4px;margin:7px 0 2px}
+.kbi{font-size:10px;padding:2px 6px;border-radius:3px;font-weight:700;white-space:nowrap}
+.kbi.fb{background:var(--fb-bg);color:var(--fb)}
+.kbi.sh{background:var(--sh-bg);color:var(--sh)}
+.kbi.lz{background:var(--lz-bg);color:var(--lz)}
+.kpi-sparkline{margin-top:8px;width:100%;height:28px}
+/* DONUT SECTION */
+.donut-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+@media(max-width:700px){.donut-row{grid-template-columns:1fr}}
+.donut-wrap{position:relative;height:180px;max-width:220px;margin:0 auto}
+.donut-legend{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.donut-legend-row{display:flex;align-items:center;gap:8px;font-size:12px}
+.donut-legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.donut-legend-label{flex:1;color:var(--muted)}
+.donut-legend-val{font-weight:700;font-size:12px}
+/* TOP/BOTTOM */
+.tb-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:750px){.tb-grid{grid-template-columns:1fr}}
+.tb-card{background:var(--surface);border-radius:var(--radius);padding:18px;border:1px solid var(--border);box-shadow:var(--shadow)}
+.tb-title{font-size:13px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.tb-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px}
+.tb-row:last-child{border-bottom:none}
+.tb-rank{width:22px;text-align:center;font-size:11px;color:var(--muted);font-weight:700;flex-shrink:0}
+.tb-info{flex:1;min-width:0}
+.tb-name{color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
+.tb-plat{font-size:10px;color:var(--muted)}
+.tb-val{font-weight:800;font-size:13px;white-space:nowrap;flex-shrink:0}
+.tb-spend{font-size:10px;color:var(--muted);white-space:nowrap}
+/* DAILY LAZADA */
+.daily-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.daily-metric-btn{padding:4px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;font-size:12px;font-weight:500;transition:.15s}
+.daily-metric-btn.active{background:var(--lz);color:#fff;border-color:var(--lz)}
+.month-sep-line{stroke:var(--border);stroke-dasharray:4 3}
+
+/* CHART CARDS */
+.chart-card{background:var(--surface);border-radius:var(--radius);padding:20px;border:1px solid var(--border);box-shadow:var(--shadow)}
+.chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px}
+.chart-title{font-size:14px;font-weight:700}
+.chart-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.chart-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.metric-btn{padding:4px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;font-size:12px;font-weight:500;transition:.15s}
+.metric-btn.active{background:var(--text);color:var(--surface);border-color:var(--text)}
+.chart-wrap{position:relative}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:800px){.two-col{grid-template-columns:1fr}}
+.chart-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.legend-dot{width:10px;height:10px;border-radius:50%}
+.legend-line{width:18px;height:3px;border-radius:2px}
+
+/* BENCHMARK NOTE */
+.benchmark-note{display:flex;gap:12px;margin-top:10px;flex-wrap:wrap}
+.bench-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)}
+.bench-line{width:20px;height:2px;border-top:2px dashed}
+
+/* TABLE */
+.table-controls{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+.platform-filter{display:flex;gap:6px}
+.pf-btn{padding:5px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;font-size:12px;font-weight:500;transition:.15s}
+.pf-btn.active{color:var(--surface);border-color:transparent}
+.pf-btn.all.active{background:var(--text)}
+.pf-btn.fb.active{background:var(--fb)}
+.pf-btn.sh.active{background:var(--sh)}
+.pf-btn.lz.active{background:var(--lz)}
+input.search-box{padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:12px;width:200px}
+.table-wrap{overflow-x:auto;border-radius:var(--radius-sm);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{background:var(--surface2);padding:10px 12px;text-align:left;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);cursor:pointer;white-space:nowrap;border-bottom:1px solid var(--border);user-select:none}
+th:hover{color:var(--text)}
+th .sort-icon{opacity:.4;margin-left:4px}
+th.sorted .sort-icon{opacity:1}
+td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--surface2)}
+.plat-badge{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;white-space:nowrap}
+.plat-badge.fb{background:var(--fb-bg);color:var(--fb)}
+.plat-badge.sh{background:var(--sh-bg);color:var(--sh)}
+.plat-badge.lz{background:var(--lz-bg);color:var(--lz)}
+.roas-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;white-space:nowrap}
+.roas-badge.green{background:rgba(16,185,129,.15);color:var(--green)}
+.roas-badge.yellow{background:rgba(245,158,11,.15);color:var(--yellow)}
+.roas-badge.red{background:rgba(239,68,68,.15);color:var(--red)}
+.roas-badge.gray{background:rgba(148,163,184,.15);color:var(--gray)}
+.status-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px}
+.status-dot.active{background:var(--green)}
+.status-dot.inactive,.status-dot.paused{background:var(--gray)}
+.num{font-variant-numeric:tabular-nums;font-weight:500}
+.table-footer{padding:10px 12px;font-size:12px;color:var(--muted);background:var(--surface2);border-top:1px solid var(--border);border-radius:0 0 var(--radius-sm) var(--radius-sm)}
+
+/* INSIGHTS */
+.insights-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:900px){.insights-grid{grid-template-columns:1fr}}
+.insight-card{background:var(--surface);border-radius:var(--radius);padding:22px;border:1px solid var(--border);box-shadow:var(--shadow)}
+.insight-card.full{grid-column:1/-1}
+.insight-title{font-size:14px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.insight-title .icon{font-size:18px}
+.insight-body p{color:var(--muted);line-height:1.7;font-size:13px;margin-bottom:10px}
+.platform-row{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.platform-row:last-child{border-bottom:none}
+.plat-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.plat-icon.fb{background:var(--fb-bg);color:var(--fb)}
+.plat-icon.sh{background:var(--sh-bg);color:var(--sh)}
+.plat-icon.lz{background:var(--lz-bg);color:var(--lz)}
+.plat-info h4{font-size:13px;font-weight:600;margin-bottom:4px}
+.plat-info p{font-size:12px;color:var(--muted);line-height:1.5}
+.budget-tag{display:inline-block;padding:1px 7px;border-radius:3px;font-size:11px;font-weight:700;background:var(--surface2);border:1px solid var(--border);margin-top:4px}
+.roadmap-table{width:100%;border-collapse:collapse}
+.roadmap-table th{background:var(--surface2);padding:8px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border);text-align:left}
+.roadmap-table td{padding:9px 12px;font-size:12.5px;border-bottom:1px solid var(--border);vertical-align:top;color:var(--muted)}
+.roadmap-table td:first-child{color:var(--text);font-weight:600}
+.roadmap-table tr:last-child td{border-bottom:none}
+.action-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.action-badge.scale{background:rgba(16,185,129,.15);color:var(--green)}
+.action-badge.optimize{background:rgba(245,158,11,.15);color:var(--yellow)}
+.action-badge.pause{background:rgba(239,68,68,.15);color:var(--red)}
+.tip-list{list-style:none;padding:0}
+.tip-list li{display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);font-size:12.5px;color:var(--muted);line-height:1.5}
+.tip-list li:last-child{border-bottom:none}
+.tip-list li::before{content:'→';color:var(--green);font-weight:700;flex-shrink:0;margin-top:1px}
+.alloc-bar{margin-top:12px}
+.alloc-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.alloc-label{width:90px;font-size:12px;font-weight:600}
+.alloc-track{flex:1;background:var(--surface2);border-radius:4px;height:18px;overflow:hidden;border:1px solid var(--border)}
+.alloc-fill{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:8px;font-size:10px;font-weight:700;color:#fff;transition:width .8s ease}
+.alloc-pct{font-size:12px;color:var(--muted);width:40px;text-align:right}
+
+/* FOOTER */
+footer{text-align:center;padding:20px;color:var(--muted);font-size:11px;border-top:1px solid var(--border);margin-top:20px}
+
+/* SCROLL */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--surface2)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">
+    <span>🌱</span> VGROW Smart Farming
+  </div>
+  <div class="nav-links">
+    <a href="#kpi" class="active">Overview</a>
+    <a href="#comparison">Platform</a>
+    <a href="#trends">Trends</a>
+    <a href="#topbottom">Top/Bottom</a>
+    <a href="#campaigns">Campaigns</a>
+    <a href="#insights">Insights</a>
+  </div>
+  <div class="nav-right">
+    <span class="updated">ข้อมูล: ธ.ค 25 – เม.ย 26</span>
+    <select class="month-filter" id="globalMonthFilter" onchange="onMonthChange(this.value)">
+      <option value="all">ทั้ง 5 เดือน</option>
+      <option value="2025-12">ธ.ค 2025</option>
+      <option value="2026-01">ม.ค 2026</option>
+      <option value="2026-02">ก.พ 2026</option>
+      <option value="2026-03">มี.ค 2026</option>
+      <option value="2026-04">เม.ย 2026</option>
+    </select>
+    <button class="theme-btn" onclick="toggleTheme()">🌙</button>
+  </div>
+</nav>
+
+<main>
+
+<!-- SECTION 1: KPI -->
+<div class="section" id="kpi">
+  <div class="section-title">📊 KPI Overview <span class="badge" id="kpi-period-label">ทั้ง 5 เดือน</span></div>
+  <div class="month-tabs" id="kpi-month-tabs">
+    <span class="month-tabs-label">📅 เลือกเดือน</span>
+    <button class="month-tab active" onclick="selectKpiMonth('all',this)">ทั้งหมด (5 เดือน)</button>
+    <button class="month-tab" onclick="selectKpiMonth('2025-12',this)">ธ.ค 2025</button>
+    <button class="month-tab" onclick="selectKpiMonth('2026-01',this)">ม.ค 2026</button>
+    <button class="month-tab" onclick="selectKpiMonth('2026-02',this)">ก.พ 2026</button>
+    <button class="month-tab" onclick="selectKpiMonth('2026-03',this)">มี.ค 2026</button>
+    <button class="month-tab" onclick="selectKpiMonth('2026-04',this)">เม.ย 2026</button>
+  </div>
+  <div class="kpi-grid" id="kpi-grid"></div>
+</div>
+
+<!-- SECTION 2: PLATFORM COMPARISON -->
+<div class="section" id="comparison">
+  <div class="section-title">🏆 Platform Comparison</div>
+  <div class="chart-card">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">Facebook vs Shopee vs Lazada</div>
+        <div class="chart-sub">เปรียบเทียบประสิทธิภาพรายแพลตฟอร์ม</div>
+      </div>
+      <div class="chart-controls" id="metric-btns">
+        <button class="metric-btn active" onclick="setCompareMetric('roas',this)">ROAS</button>
+        <button class="metric-btn" onclick="setCompareMetric('ctr',this)">CTR</button>
+        <button class="metric-btn" onclick="setCompareMetric('cpc',this)">CPC</button>
+        <button class="metric-btn" onclick="setCompareMetric('orders',this)">Orders</button>
+      </div>
+    </div>
+    <div class="chart-wrap"><canvas id="barChart" height="120"></canvas></div>
+    <div class="benchmark-note" id="benchmark-note"></div>
+    <div class="chart-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--fb)"></div>Facebook</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--sh)"></div>Shopee</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--lz)"></div>Lazada</div>
+    </div>
+  </div>
+  <div class="donut-row">
+    <div class="chart-card">
+      <div class="chart-header">
+        <div><div class="chart-title">สัดส่วน Ad Spend</div><div class="chart-sub" id="donut-spend-sub">ทั้ง 5 เดือน รวม ฿0</div></div>
+      </div>
+      <div class="donut-wrap"><canvas id="donutSpend"></canvas></div>
+      <div class="donut-legend" id="donut-spend-legend"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div><div class="chart-title">สัดส่วน Revenue</div><div class="chart-sub" id="donut-rev-sub">ทั้ง 5 เดือน รวม ฿0</div></div>
+      </div>
+      <div class="donut-wrap"><canvas id="donutRevenue"></canvas></div>
+      <div class="donut-legend" id="donut-rev-legend"></div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 3: TRENDS -->
+<div class="section" id="trends">
+  <div class="section-title">📈 Trend Over Time <span class="badge">5-Month Monthly</span></div>
+  <div class="two-col">
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Spend vs Revenue</div>
+          <div class="chart-sub">ค่าโฆษณา vs ยอดขาย (บาท) แยกแพลตฟอร์ม</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="spendRevenueChart" height="180"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">ROAS / ROI Comparison</div>
+          <div class="chart-sub">ผลตอบแทนต่อค่าโฆษณาแต่ละแพลตฟอร์ม</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="roasChart" height="180"></canvas></div>
+    </div>
+  </div>
+  <div class="chart-card" style="margin-top:16px">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">🟠 Lazada — Daily Performance</div>
+        <div class="chart-sub">ข้อมูลรายวันทั้ง 5 เดือน (151 วัน)</div>
+      </div>
+      <div class="daily-controls">
+        <button class="daily-metric-btn active" onclick="setDailyMetric('rv',this)">Revenue</button>
+        <button class="daily-metric-btn" onclick="setDailyMetric('sp',this)">Spend</button>
+        <button class="daily-metric-btn" onclick="setDailyMetric('od',this)">Orders</button>
+      </div>
+    </div>
+    <div class="chart-wrap"><canvas id="dailyLazadaChart" height="100"></canvas></div>
+    <div class="chart-legend" style="margin-top:10px" id="daily-month-legend"></div>
+  </div>
+</div>
+
+<!-- SECTION 3.5: TOP / BOTTOM CAMPAIGNS -->
+<div class="section" id="topbottom">
+  <div class="section-title">🏅 Top 5 &amp; Bottom 5 Campaigns <span class="badge">จัดอันดับตาม ROAS</span></div>
+  <div class="tb-grid" id="tb-grid"></div>
+</div>
+
+<!-- SECTION 4: CAMPAIGN TABLE -->
+<div class="section" id="campaigns">
+  <div class="section-title">📋 Campaign Breakdown <span class="badge" id="row-count"></span></div>
+  <div class="table-controls">
+    <div class="platform-filter">
+      <button class="pf-btn all active" onclick="setPlatFilter('all',this)">All</button>
+      <button class="pf-btn fb" onclick="setPlatFilter('Facebook',this)">Facebook</button>
+      <button class="pf-btn sh" onclick="setPlatFilter('Shopee',this)">Shopee</button>
+      <button class="pf-btn lz" onclick="setPlatFilter('Lazada',this)">Lazada</button>
+    </div>
+    <input class="search-box" id="searchBox" placeholder="🔍 ค้นหาแคมเปญ..." oninput="renderTable()">
+    <select class="month-filter" id="tableMonthFilter" onchange="renderTable()">
+      <option value="all">ทุกเดือน</option>
+      <option value="2025-12">ธ.ค 2025</option>
+      <option value="2026-01">ม.ค 2026</option>
+      <option value="2026-02">ก.พ 2026</option>
+      <option value="2026-03">มี.ค 2026</option>
+      <option value="2026-04">เม.ย 2026</option>
+    </select>
+  </div>
+  <div class="table-wrap">
+    <table id="campTable">
+      <thead>
+        <tr>
+          <th onclick="sortBy('platform')">แพลตฟอร์ม <span class="sort-icon">↕</span></th>
+          <th onclick="sortBy('month')">เดือน <span class="sort-icon">↕</span></th>
+          <th>ชื่อแคมเปญ</th>
+          <th>ประเภท</th>
+          <th onclick="sortBy('spend')" class="sorted">ค่าโฆษณา ↕</th>
+          <th onclick="sortBy('revenue')">ยอดขาย ↕</th>
+          <th onclick="sortBy('roas')">ROAS ↕</th>
+          <th onclick="sortBy('orders')">คำสั่งซื้อ ↕</th>
+          <th>CTR</th>
+          <th>สถานะ</th>
+        </tr>
+      </thead>
+      <tbody id="campBody"></tbody>
+    </table>
+    <div class="table-footer" id="table-footer"></div>
+  </div>
+</div>
+
+<!-- SECTION 5: INSIGHTS -->
+<div class="section" id="insights">
+  <div class="section-title">💡 Marketing Insights & Recommendations</div>
+  <div class="insights-grid">
+
+    <!-- Platform Strategy -->
+    <div class="insight-card">
+      <div class="insight-title"><span class="icon">🎯</span> Platform Strategy</div>
+      <div class="platform-row">
+        <div class="plat-icon fb">📘</div>
+        <div class="plat-info">
+          <h4>Facebook Ads — Brand Awareness & Upper Funnel</h4>
+          <p>ทำหน้าที่สร้างการรับรู้แบรนด์และดึงดูดลูกค้าใหม่ผ่าน Messaging, ThruPlay Video ROAS จาก tracked purchases เฉลี่ย 7.4x แต่บทบาทหลักคือ Discovery ไม่ใช่ Direct Sales โดดเด่นในเม.ย 26 ที่มี tracked revenue 224,192 บาท</p>
+          <div class="budget-tag" style="background:var(--fb-bg);color:var(--fb);border-color:var(--fb)">งบแนะนำ: 25%</div>
+        </div>
+      </div>
+      <div class="platform-row">
+        <div class="plat-icon sh">🛍️</div>
+        <div class="plat-info">
+          <h4>Shopee Ads — Primary Revenue Engine</h4>
+          <p>แหล่งรายได้หลัก 84% ของ revenue รวม (2.53M บาท) ROAS เฉลี่ย 26.5x ทุกเดือน มีเฉพาะ ก.พ 26 ที่ ROAS ลดเป็น 20.24x แคมเปญ Bluelab ทำ ROAS สูงสุดถึง 60.8x</p>
+          <div class="budget-tag" style="background:var(--sh-bg);color:var(--sh);border-color:var(--sh)">งบแนะนำ: 55%</div>
+        </div>
+      </div>
+      <div class="platform-row">
+        <div class="plat-icon lz">🟠</div>
+        <div class="plat-info">
+          <h4>Lazada Ads — Efficient Secondary Channel</h4>
+          <p>ROAS เฉลี่ย 20.2x ค่าใช้จ่ายลดลงต่อเนื่อง (7,234 → 4,730 บาท/เดือน) แต่ ROAS รักษาระดับดี ก.พ 26 ทำ ROAS สูงสุด 30.07x มีศักยภาพขยายงบได้อีก</p>
+          <div class="budget-tag" style="background:var(--lz-bg);color:var(--lz);border-color:var(--lz)">งบแนะนำ: 20%</div>
+        </div>
+      </div>
+      <div class="alloc-bar">
+        <div class="alloc-row">
+          <div class="alloc-label" style="color:var(--sh)">Shopee</div>
+          <div class="alloc-track"><div class="alloc-fill" style="width:55%;background:var(--sh)">55%</div></div>
+          <div class="alloc-pct">55%</div>
+        </div>
+        <div class="alloc-row">
+          <div class="alloc-label" style="color:var(--fb)">Facebook</div>
+          <div class="alloc-track"><div class="alloc-fill" style="width:25%;background:var(--fb)">25%</div></div>
+          <div class="alloc-pct">25%</div>
+        </div>
+        <div class="alloc-row">
+          <div class="alloc-label" style="color:var(--lz)">Lazada</div>
+          <div class="alloc-track"><div class="alloc-fill" style="width:20%;background:var(--lz)">20%</div></div>
+          <div class="alloc-pct">20%</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Audience & Creative Tips -->
+    <div class="insight-card">
+      <div class="insight-title"><span class="icon">🎨</span> Audience & Creative Tips</div>
+      <ul class="tip-list">
+        <li><strong>Keywords ที่ดี:</strong> ไฮโดรโปนิกส์, เกษตรอัจฉริยะ, Smart Farming, Bluelab, Athena Pro, ปลูกผักออแกนิค, โรงเพาะชำ, pH Meter ราคา</li>
+        <li><strong>Facebook Video (Reels/ThruPlay):</strong> สร้าง Demo Video แสดงการใช้งาน Bluelab pH Meter ในสวน ระยะ 15-30 วิ ผลลัพธ์ดีกว่า Static 3-4x</li>
+        <li><strong>Shopee Creative:</strong> ใช้ภาพ Before/After การเพาะปลูก + ป้าย "ส่งฟรี" เพิ่ม CTR ได้ถึง 30% Carousel สำหรับ Bluelab Product Line</li>
+        <li><strong>Peak Ad Times:</strong> Facebook 20:00-23:00 (Thai prime time), Shopee 11:00-13:00 + Flash Sale 00:00. Lazada Campaign Days: 11.11, 12.12</li>
+        <li><strong>Lookalike Audiences FB:</strong> สร้างจาก Customer List ของ Shopee ที่ซื้อ Bluelab + Athena → ลด CPR ได้ ~40%</li>
+        <li><strong>Retargeting:</strong> ผู้เยี่ยมชม Shopee Storefront แต่ยังไม่ซื้อ → Facebook Retargeting Ads ด้วย Voucher 10%</li>
+        <li><strong>Lazada Campaign Timing:</strong> เปิด Sponsored Ads ก่อน Platform Sale 3 วัน เพื่อ warm up algorithm (พิสูจน์จากข้อมูล ก.พ 26 ROAS 30x)</li>
+      </ul>
+    </div>
+
+    <!-- 30/60/90 Day Roadmap -->
+    <div class="insight-card full">
+      <div class="insight-title"><span class="icon">🗺️</span> 30 / 60 / 90 Day Budget Roadmap</div>
+      <div style="overflow-x:auto">
+      <table class="roadmap-table">
+        <thead>
+          <tr>
+            <th>ช่วงเวลา</th>
+            <th>แพลตฟอร์ม / แคมเปญ</th>
+            <th>Action</th>
+            <th>ROAS / Metric</th>
+            <th>เหตุผล & เป้าหมาย</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>30 วัน</td>
+            <td>Shopee — Bluelab รวมอุปกรณ์ (Campaign #3)</td>
+            <td><span class="action-badge scale">Scale Up</span></td>
+            <td>ROAS 60.84x | CTR 1.59%</td>
+            <td>ROAS สูงสุดในพอร์ต เพิ่มงบ +50% (จาก ~2,427 → 3,600 บาท/เดือน) ตั้งเป้า revenue ทะลุ 200K บาทต่อแคมเปญ</td>
+          </tr>
+          <tr>
+            <td>30 วัน</td>
+            <td>Shopee — Athena Pro Bloom (Campaign #5)</td>
+            <td><span class="action-badge scale">Scale Up</span></td>
+            <td>ROAS 37.81x | CTR 1.70%</td>
+            <td>สินค้า high-value ROAS ดีมาก เพิ่มงบ +40% เพื่อขยายฐานลูกค้า Organic Fertilizer segment</td>
+          </tr>
+          <tr>
+            <td>30 วัน</td>
+            <td>Facebook — Video Reels Campaigns</td>
+            <td><span class="action-badge scale">Scale Up</span></td>
+            <td>Spend 9,113 บาท | Reach 122K</td>
+            <td>Reach เพิ่มขึ้น 45% ใน 5 เดือน (84K→122K) เพิ่มงบ Video Reels อีก 2,000 บาท/เดือน เน้น Demo Content</td>
+          </tr>
+          <tr>
+            <td>60 วัน</td>
+            <td>Shopee — Boveda ReFresh (Campaign #4)</td>
+            <td><span class="action-badge optimize">Optimize</span></td>
+            <td>ROAS 10.96x | CTR 2.35%</td>
+            <td>ROAS อยู่ใน "Good" zone แต่ยังต่ำกว่า Top Performer ทดสอบ Ad Copy ใหม่เน้น "Ready-to-use" + เพิ่ม Keyword Bid สำหรับ Humidity Control</td>
+          </tr>
+          <tr>
+            <td>60 วัน</td>
+            <td>Shopee — โฆษณาร้านค้า (Campaign #2)</td>
+            <td><span class="action-badge optimize">Optimize</span></td>
+            <td>ROAS 2.96x | CPC 5.25 บาท</td>
+            <td>ROAS ต่ำกว่าเกณฑ์ 3.0x ทบทวน Keyword Targeting ลด Broad Match ลงและเพิ่ม Exact Match บน product names ตั้ง ROAS Target ≥ 5x</td>
+          </tr>
+          <tr>
+            <td>60 วัน</td>
+            <td>Lazada — ทุกเดือน (Overall)</td>
+            <td><span class="action-badge optimize">Optimize</span></td>
+            <td>ROAS avg 20.2x | Clicks ลด 35%</td>
+            <td>Clicks ลดลง (2,386→1,552/เดือน) แต่ ROAS ยังดี ทดสอบ Sponsored Discovery Ads ใหม่ + เพิ่มงบ 500 บาท/เดือนเพื่อรักษา Impression Share</td>
+          </tr>
+          <tr>
+            <td>90 วัน</td>
+            <td>Shopee — UPuper Rockwool CP (Campaign #8)</td>
+            <td><span class="action-badge pause">Pause</span></td>
+            <td>ROAS 0.00x | Spend 3.01 บาท</td>
+            <td>ไม่มียอดขายเลยในงบที่ใช้ สินค้า paused อยู่แล้ว ควร Archive และ relaunch ด้วย creative ใหม่หลัง A/B test</td>
+          </tr>
+          <tr>
+            <td>90 วัน</td>
+            <td>Facebook — Low-Result Messaging Campaigns</td>
+            <td><span class="action-badge pause">Pause</span></td>
+            <td>Spend ~800–1,600 บาท | Results &lt; 20</td>
+            <td>แคมเปญ Messaging ที่ CPM สูงแต่ Results น้อย ใน ธ.ค–ม.ค ควร Pause และ redirect งบไปที่ Video Reels ซึ่งมี Reach สูงกว่า 3x</td>
+          </tr>
+          <tr>
+            <td>90 วัน</td>
+            <td>Lazada — New Product Category Expansion</td>
+            <td><span class="action-badge scale">Scale Up</span></td>
+            <td>Target ROAS ≥ 25x</td>
+            <td>เพิ่มสินค้าหมวด Smart Irrigation + Grow Light ใน Lazada Sponsored Ads โดยใช้ข้อมูล Shopee Top Sellers เป็น baseline CPC ≤ 3.50 บาท</td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</main>
+<footer>VGROW Smart Farming — Marketing Analytics Dashboard | ข้อมูล ธ.ค 2025 – เม.ย 2026 | สร้างโดย Claude AI</footer>
+
+<script>
+const SHOPEE = [{"month": "ธ.ค 25", "period": "2025-12", "spend": 18517.99, "revenue": 518883.0, "clicks": 4148, "impressions": 182058, "orders": 410, "roas": 28.02, "ctr": 2.28, "cpc": 4.46}, {"month": "ม.ค 26", "period": "2026-01", "spend": 18610.26, "revenue": 528979.0, "clicks": 4430, "impressions": 176221, "orders": 454, "roas": 28.42, "ctr": 2.51, "cpc": 4.2}, {"month": "ก.พ 26", "period": "2026-02", "spend": 18438.1, "revenue": 373265.0, "clicks": 4528, "impressions": 181227, "orders": 372, "roas": 20.24, "ctr": 2.5, "cpc": 4.07}, {"month": "มี.ค 26", "period": "2026-03", "spend": 20304.13, "revenue": 550278.0, "clicks": 3823, "impressions": 146493, "orders": 413, "roas": 27.1, "ctr": 2.61, "cpc": 5.31}, {"month": "เม.ย 26", "period": "2026-04", "spend": 19299.14, "revenue": 558014.0, "clicks": 3942, "impressions": 123224, "orders": 379, "roas": 28.91, "ctr": 3.2, "cpc": 4.9}];
+const FB = [{"month": "ธ.ค 25", "period": "2025-12", "spend": 6869.68, "impressions": 131839, "reach": 84289, "results": 27580.0, "purchases": 6.0, "revenue": 23309.0, "messaging": 78.0, "roas": 3.39, "ctr": 20.92, "cpc": 0.25}, {"month": "ม.ค 26", "period": "2026-01", "spend": 6120.95, "impressions": 186683, "reach": 114001, "results": 68072.0, "purchases": 6.0, "revenue": 3850.0, "messaging": 109.0, "roas": 0.63, "ctr": 36.46, "cpc": 0.09}, {"month": "ก.พ 26", "period": "2026-02", "spend": 7588.54, "impressions": 194036, "reach": 110273, "results": 57726.0, "purchases": 10.0, "revenue": 38417.0, "messaging": 123.0, "roas": 5.06, "ctr": 29.75, "cpc": 0.13}, {"month": "มี.ค 26", "period": "2026-03", "spend": 9610.84, "impressions": 210180, "reach": 124730, "results": 39300.0, "purchases": 5.0, "revenue": 1049.0, "messaging": 133.0, "roas": 0.11, "ctr": 18.7, "cpc": 0.24}, {"month": "เม.ย 26", "period": "2026-04", "spend": 9113.19, "impressions": 196749, "reach": 122427, "results": 43973.0, "purchases": 5.0, "revenue": 224192.0, "messaging": 116.0, "roas": 24.6, "ctr": 22.35, "cpc": 0.21}];
+const LZ = [{"month": "ธ.ค 25", "period": "2025-12", "spend": 7234.22, "revenue": 144070.9, "orders": 66, "clicks": 2386, "impressions": 86534, "roas": 19.92, "direct_orders": 51, "ctr": 2.76, "cpc": 3.03}, {"month": "ม.ค 26", "period": "2026-01", "spend": 6581.37, "revenue": 93191.6, "orders": 54, "clicks": 2066, "impressions": 86073, "roas": 14.16, "direct_orders": 45, "ctr": 2.4, "cpc": 3.19}, {"month": "ก.พ 26", "period": "2026-02", "spend": 5553.59, "revenue": 167023.97, "orders": 56, "clicks": 1746, "impressions": 66165, "roas": 30.07, "direct_orders": 49, "ctr": 2.64, "cpc": 3.18}, {"month": "มี.ค 26", "period": "2026-03", "spend": 5809.65, "revenue": 97258.46, "orders": 48, "clicks": 1684, "impressions": 59438, "roas": 16.74, "direct_orders": 37, "ctr": 2.83, "cpc": 3.45}, {"month": "เม.ย 26", "period": "2026-04", "spend": 4729.69, "revenue": 103093.96, "orders": 47, "clicks": 1552, "impressions": 57117, "roas": 21.8, "direct_orders": 38, "ctr": 2.72, "cpc": 3.05}];
+const CAMPAIGNS = [{"platform": "Shopee", "month": "ธ.ค 25", "period": "2025-12", "name": "Shop GMV Max", "type": "Product Ads", "spend": 4228.59, "revenue": 121083.0, "roas": 28.63, "orders": 117.0, "ctr": "3.01%", "status": "กำลังดำเนินการ"}, {"platform": "Shopee", "month": "ธ.ค 25", "period": "2025-12", "name": "โฆษณาร้านค้า 19-07-2025", "type": "โฆษณาร้านค้า", "spend": 1427.41, "revenue": 11167.0, "roas": 7.82, "orders": 7.0, "ctr": "7.76%", "status": "หยุดชั่วคราว"}, {"platform": "Shopee", "month": "ธ.ค 25", "period": "2025-12", "name": "[ส่งฟรี] Bluelab รวมอุปกรณ์และปากกาวัดค่าประเภทต่างๆ ใช", "type": "โฆษณาสินค้า", "spend": 3581.45, "revenue": 113056.0, "roas": 31.57, "orders": 48.0, "ctr": "2.50%", "status": "กำลังดำเนินการ"}, {"platform": "Shopee", "month": "ธ.ค 25", "period": "2025-12", "name": "[ส่งฟรี] Athena Pro Bloom บำรุงดอกโดยเฉพาะ 0-12-24 ขนาด", "type": "โฆษณาสินค้า", "spend": 1696.15, "revenue": 65004.0, "roas": 38.32, "orders": 33.0, "ctr": "1.70%", "status": "กำลังดำเนินการ"}, {"platform": "Shopee", "month": "ธ.ค 25", "period": "2025-12", "name": "[ส่งฟรี] Bluelab รวมอุปกรณ์วัดค่าเชิงอุตสาหกรรม ติดผนัง", "type": "โฆษณาสินค้า", "spend": 2173.13, "revenue": 56040.0, "roas": 25.79, "orders": 17.0, "ctr": "1.38%", "status": "กำลังดำเนินการ"}, {"platform": "Shopee", "month": "ธ.ค 25", "period": "2025-12", "name": "Boveda ReFresh 4G 62% RH ซองซีลแยก รักษาความชื้นดอกสมุน", "type": "โฆษณาสินค้า", "spend": 1901.1, "revenue": 40489.0, "roas": 21.3, "orders": 100.0, "ctr": "2.74%", "status": "กำลังดำเนินการ"}, {"platform": "Shopee", "month": "ธ.ค 25", "period": "2025-12", "name": "UPuper Rockwool plug sheet ร็อควูล ชีท สำหรับ เพาะชำ เพ", "type": "โฆษณาสินค้า", "spend": 2130.92, "revenue": 108023.0, "roas": 50.69, "orders": 62.0, "ctr": "2.00%", "status": "หยุดชั่วคราว"}, {"platform": "Shopee", "month": "ธ.ค 25", "period": "2025-12", "name": "UPuper Rockwool CP R20 ร็อควูล เพาะชำ ทรงกลม สำหรับไฮโด", "type": "โฆษณาสินค้า", "spend": 1099.06, "revenue": 2434.0, "roas": 2.21, "orders": 23.0, "ctr": "1.56%", "status": "หยุดชั่วคราว"}, {"platform": "Shopee", "month": "ธ.ค 25", "period": "2025-12", "name": "SafeVac TerpLoc™ ถุงซีลสูญญากาศ 11” บ่ม-เก็บดอกสมุนไพรไ", "type": "โฆษณาสินค้า", "spend": 280.18, "revenue": 1587.0, "roas": 5.66, "orders": 3.0, "ctr": "0.97%", "status": "หยุดชั่วคราว"}, {"platform": "Shopee", "month": "ม.ค 26", "period": "2026-01", "name": "Shop GMV Max", "type": "Product Ads", "spend": 5106.46, "revenue": 103310.0, "roas": 20.23, "orders": 103.0, "ctr": "3.42%", "status": "กำลังดำเนินการ"}, {"platform": "Shopee", "month": "ม.ค 26", "period": "2026-01", "name": "โฆษณาร้านค้า 19-07-2025", "type": "โฆษณาร้านค้า", "spend": 1260.12, "revenue": 3731.0, "roas": 2.96, "orders": 10.0, "ctr": "6.36%", "status": "หยุดชั่วคราว"}, {"platform": "Shopee", "month": "ม.ค 26", "period": "2026-01", "name": "[ส่งฟรี] Bluelab รวมอุปกรณ์วัดค่าเชิงอุตสาหกรรม ติดผนัง", "type": "โฆษณาสินค้า", "spend": 2427.0, "revenue": 147658.0, "roas": 60.84, "orders": 52.0, "ctr": "1.59%", "status": "กำลังดำเนินการ"}, {"platform": "Shopee", "month": "ม.ค 26", "period": "2026-01", "name": "Boveda ReFresh 4G 62% RH ซองซีลแยก รักษาความชื้นดอกสมุน", "type": "โฆษณาสินค้า", "spend": 1949.73, "revenue": 21375.0, "roas": 10.96, "orders": 105.0, "ctr": "2.35%", "status": "กำลังดำเนินการ"}, {"platform": "Shopee", "month": "ม.ค 26", "period": "2026-01", "name": "[ส่งฟรี] Athena Pro Bloom บำรุงดอกโดยเฉพาะ 0-12-24 ขนาด", "type": "โฆษณาสินค้า", "spend": 2182.27, "revenue": 82506.0, "roas": 37.81, "orders": 56.0, "ctr": "1.70%", "status": "กำลังดำเนินการ"}, {"platform": "Shopee", "month": "ม.ค 26", "period": "2026-01", "name": "[ส่งฟรี] Bluelab รวมอุปกรณ์และปากกาวัดค่าประเภทต่างๆ ใช", "type": "โฆษณาสินค้า", "spend": 3269.31, "revenue": 110042.0, "roas": 33.66, "orders": 54.0, "ctr": "2.89%", "status": "กำลังดำเนินการ"}, {"platform": "Shopee", "month": "ม.ค 26", "period": "2026-01", "name": "UPuper Rockwool plug sheet ร็อควูล ชีท สำหรับ เพาะชำ เพ", "type": "โฆษณาสินค้า", "spend": 2412.36, "revenue": 60357.0, "roas": 25.02, "orders": 74.0, "ctr": "2.44%", "status": "หยุดชั่วคราว"}, {"platform": "Shopee", "month": "ม.ค 26", "period": "2026-01", "name": "UPuper Rockwool CP R20 ร็อควูล เพาะชำ ทรงกลม สำหรับไฮโด", "type": "โฆษณาสินค้า", "spend": 3.01, "revenue": 0.0, "roas": 0.0, "orders": 0.0, "ctr": "1.79%", "status": "หยุดชั่วคราว"}, {"platform": "Shopee", "month": "ก.พ 26", "period": "2026-02", "name": "Shop GMV Max", "type": "Product Ads", "spend": 5600.0, "revenue": 136877.0, "roas": 24.44, "orders": 119.0, "ctr": "3.01%", "status": "กำลังดำเนินการ"}, {"platform": "Shopee", "month": "ก.พ 26", "period": "2026-02", "name": "โฆษณาร้านค้า 19-07-2025", "type": "โฆษณาร้านค้า", "spend": 251.08, "revenue": 183.0, "roas": 0.73, "orders": 1.0, "ctr": "4.73%", "status": "หยุดชั่วคราว"}, {"platform": "Shopee", "month": "ก.พ 26", "period": "2026-02", "name": "Boveda ReFresh 4G 62% RH ซองซีลแยก รักษาความชื้นดอกสมุน", "type": "โฆษณาสินค้า", "spend": 1830.09, "revenue": 19459.0, "roas": 10.63, "orders": 85.0, "ctr": "2.30%", "status": "กำลังดำเนินการ"}, {"platform": "Shopee", "month": "ก.พ 26", "period": "2026-02", "name": "[ส่งฟรี] Bluelab รวมอุปกรณ์และปากกาวัดค่าประเภทต่างๆ ใช", "type": "โฆษณาสินค้า", "spend": 3148.06, "revenue": 105596.0, "roas": 33.54, "orders": 37.0, "ctr": "2.55%", "status": "กำลังดำเนินการ"}, {"platform": "Shopee", "month": "ก.พ 26", "period": "2026-02", "name": "[ส่งฟรี] Bluelab รวมอุปกรณ์วัดค่าเชิงอุตสาหกรรม ติดผนัง", "type": "โฆษณาสินค้า", "spend": 2494.99, "revenue": 25371.0, "roas": 10.17, "orders": 11.0, "ctr": "1.74%", "status": "กำลังดำเนินการ"}, {"platform": "Shopee", "month": "ก.พ 26", "period": "2026-02", "name": "[ส่งฟรี] Athena Pro Bloom บำรุงดอกโดยเฉพาะ 0-12-24 ขนาด", "type": "โฆษณาสินค้า", "spend": 1985.65, "revenue": 50119.0, "roas": 25.24, "orders": 34.0, "ctr": "1.83%", "status": "กำลังดำเนินการ"}, {"platform": "Shopee", "month": "ก.พ 26", "period": "2026-02", "name": "UPuper Rockwool plug sheet ร็อควูล ชีท สำหรับ เพาะชำ เพ", "type": "โฆษณาสินค้า", "spend": 1964.6, "revenue": 27283.0, "roas": 13.89, "orders": 49.0, "ctr": "2.40%", "status": "หยุดชั่วคราว"}, {"platform": "Shopee", "month": "ก.พ 26", "period": "2026-02", "name": "KNAAP BASIC ขุยมะพร้าวแท้ 100% ขนาด 55 ลิตร ใช้งานง่าย ", "type": "โฆษณาสินค้า", "spend": 1163.63, "revenue": 8377.0, "roas": 7.2, "orders": 36.0, "ctr": "2.24%", "status": "หยุดชั่วคราว"}, {"platform": "Shopee", "month": "มี.ค 26", "period": "2026-03", "name": "Shop GMV Max", "type": "Product Ads", "spend": 6000.0, "revenue": 194802.0, "roas": 32.47, "orders": 174.0, "ctr": "3.24%", "status": "กำลังดำเนินการ"}, {"platform": "Shopee", "month": "มี.ค 26", "period": "2026-03", "name": "Boveda ReFresh 4G 62% RH ซองซีลแยก รักษาความชื้นดอกสมุน", "type": "โฆษณาสินค้า", "spend": 1515.76, "revenue": 43147.0, "roas": 28.47, "orders": 65.0, "ctr": "2.56%", "status": "กำลังดำเนินการ"}, {"platform": "Shopee", "month": "มี.ค 26", "period": "2026-03", "name": "[ส่งฟรี] Bluelab รวมอุปกรณ์วัดค่าเชิงอุตสาหกรรม ติดผนัง", "type": "โฆษณาสินค้า", "spend": 2840.94, "revenue": 70658.0, "roas": 24.87, "orders": 28.0, "ctr": "1.76%", "status": "กำลังดำเนินการ"}, {"platform": "Shopee", "month": "มี.ค 26", "period": "2026-03", "name": "[ส่งฟรี] VFLOW FAN Combo set ชุดพัดลมระบายอากาศ ขนาด 4,", "type": "โฆษณาสินค้า", "spend": 2124.97, "revenue": 50356.0, "roas": 23.7, "orders": 26.0, "ctr": "3.30%", "status": "กำลังดำเนินการ"}, {"platform": "Shopee", "month": "มี.ค 26", "period": "2026-03", "name": "[ส่งฟรี] Bluelab รวมอุปกรณ์และปากกาวัดค่าประเภทต่างๆ ใช", "type": "โฆษณาสินค้า", "spend": 3393.97, "revenue": 114222.0, "roas": 33.65, "orders": 43.0, "ctr": "2.14%", "status": "กำลังดำเนินการ"}, {"platform": "Shopee", "month": "มี.ค 26", "period": "2026-03", "name": "[ส่งฟรี] Athena Pro Bloom บำรุงดอกโดยเฉพาะ 0-12-24 ขนาด", "type": "โฆษณาสินค้า", "spend": 2170.72, "revenue": 48116.0, "roas": 22.17, "orders": 31.0, "ctr": "1.62%", "status": "กำลังดำเนินการ"}, {"platform": "Shopee", "month": "มี.ค 26", "period": "2026-03", "name": "UPuper Rockwool plug sheet ร็อควูล ชีท สำหรับ เพาะชำ เพ", "type": "โฆษณาสินค้า", "spend": 1902.9, "revenue": 16581.0, "roas": 8.71, "orders": 35.0, "ctr": "2.24%", "status": "หยุดชั่วคราว"}, {"platform": "Shopee", "month": "มี.ค 26", "period": "2026-03", "name": "KNAAP BASIC ขุยมะพร้าวแท้ 100% ขนาด 55 ลิตร ใช้งานง่าย ", "type": "โฆษณาสินค้า", "spend": 354.87, "revenue": 12396.0, "roas": 34.93, "orders": 11.0, "ctr": "3.07%", "status": "หยุดชั่วคราว"}, {"platform": "Shopee", "month": "เม.ย 26", "period": "2026-04", "name": "Shop GMV Max", "type": "Product Ads", "spend": 6091.71, "revenue": 201871.0, "roas": 33.14, "orders": 209.0, "ctr": "4.29%", "status": "กำลังดำเนินการ"}, {"platform": "Shopee", "month": "เม.ย 26", "period": "2026-04", "name": "[ส่งฟรี] VFLOW FAN Combo set ชุดพัดลมระบายอากาศ ขนาด 4,", "type": "โฆษณาสินค้า", "spend": 2167.16, "revenue": 48125.0, "roas": 22.21, "orders": 18.0, "ctr": "4.11%", "status": "กำลังดำเนินการ"}, {"platform": "Shopee", "month": "เม.ย 26", "period": "2026-04", "name": "Boveda ReFresh 4G 62% RH ซองซีลแยก รักษาความชื้นดอกสมุน", "type": "โฆษณาสินค้า", "spend": 1987.39, "revenue": 17731.0, "roas": 8.92, "orders": 63.0, "ctr": "2.52%", "status": "กำลังดำเนินการ"}, {"platform": "Shopee", "month": "เม.ย 26", "period": "2026-04", "name": "[ส่งฟรี] Athena Pro Bloom บำรุงดอกโดยเฉพาะ 0-12-24 ขนาด", "type": "โฆษณาสินค้า", "spend": 2127.58, "revenue": 72588.0, "roas": 34.12, "orders": 33.0, "ctr": "1.32%", "status": "กำลังดำเนินการ"}, {"platform": "Shopee", "month": "เม.ย 26", "period": "2026-04", "name": "[ส่งฟรี] Bluelab รวมอุปกรณ์วัดค่าเชิงอุตสาหกรรม ติดผนัง", "type": "โฆษณาสินค้า", "spend": 3294.21, "revenue": 66619.0, "roas": 20.22, "orders": 25.0, "ctr": "2.42%", "status": "กำลังดำเนินการ"}, {"platform": "Shopee", "month": "เม.ย 26", "period": "2026-04", "name": "[ส่งฟรี] Bluelab รวมอุปกรณ์และปากกาวัดค่าประเภทต่างๆ ใช", "type": "โฆษณาสินค้า", "spend": 3510.04, "revenue": 150488.0, "roas": 42.87, "orders": 29.0, "ctr": "2.12%", "status": "กำลังดำเนินการ"}, {"platform": "Shopee", "month": "เม.ย 26", "period": "2026-04", "name": "UPuper Rockwool plug sheet ร็อควูล ชีท สำหรับ เพาะชำ เพ", "type": "โฆษณาสินค้า", "spend": 121.05, "revenue": 592.0, "roas": 4.89, "orders": 2.0, "ctr": "1.90%", "status": "หยุดชั่วคราว"}, {"platform": "Facebook", "month": "ธ.ค 25", "period": "2025-12", "name": "Bluelab/ Album/ Mes", "type": "N/A", "spend": 1614.87, "revenue": 0, "roas": null, "orders": 0, "ctr": "-", "status": "inactive"}, {"platform": "Facebook", "month": "ธ.ค 25", "period": "2025-12", "name": "Reels IG / fb", "type": "ThruPlay", "spend": 981.48, "revenue": 0, "roas": null, "orders": 0, "ctr": "-", "status": "active"}, {"platform": "Facebook", "month": "ธ.ค 25", "period": "2025-12", "name": "Bluelab/ DK / SLIDE/ Mes - DEC", "type": "การสนทนาผ่านการส่งข้อความที่เริ่มขึ", "spend": 783.19, "revenue": 0, "roas": null, "orders": 0, "ctr": "-", "status": "inactive"}, {"platform": "Facebook", "month": "ธ.ค 25", "period": "2025-12", "name": "Bluelab/ DK / SLIDE/ Mes - เก่าเเลกใหม่", "type": "การสนทนาผ่านการส่งข้อความที่เริ่มขึ", "spend": 755.08, "revenue": 1487.0, "roas": 1.97, "orders": 1.0, "ctr": "-", "status": "inactive"}, {"platform": "Facebook", "month": "ธ.ค 25", "period": "2025-12", "name": "Reels FB / ส่วนร่วม", "type": "การมีส่วนร่วมกับโพสต์", "spend": 727.63, "revenue": 0, "roas": null, "orders": 0, "ctr": "-", "status": "active"}, {"platform": "Facebook", "month": "ธ.ค 25", "period": "2025-12", "name": "Bluelab/ DK / SLIDE/ Mes", "type": "การสนทนาผ่านการส่งข้อความที่เริ่มขึ", "spend": 659.92, "revenue": 21822.0, "roas": 33.07, "orders": 5.0, "ctr": "-", "status": "inactive"}, {"platform": "Facebook", "month": "ธ.ค 25", "period": "2025-12", "name": "Athena Reels - Shopee link", "type": "การคลิกลิงก์", "spend": 537.99, "revenue": 0, "roas": null, "orders": 0, "ctr": "-", "status": "inactive"}, {"platform": "Facebook", "month": "ธ.ค 25", "period": "2025-12", "name": "Bluelab/ DK / SLIDE/ EG - เก่าเเลกใหม่", "type": "การมีส่วนร่วมกับโพสต์", "spend": 496.04, "revenue": 0, "roas": null, "orders": 0, "ctr": "-", "status": "inactive"}, {"platform": "Facebook", "month": "ธ.ค 25", "period": "2025-12", "name": "Reels FB / ส่วนร่วม", "type": "การมีส่วนร่วมกับโพสต์", "spend": 191.08, "revenue": 0, "roas": null, "orders": 0, "ctr": "-", "status": "active"}, {"platform": "Facebook", "month": "ธ.ค 25", "period": "2025-12", "name": "Bluelab/ DK / SLIDE/ Mes", "type": "การสนทนาผ่านการส่งข้อความที่เริ่มขึ", "spend": 122.4, "revenue": 0, "roas": null, "orders": 0, "ctr": "-", "status": "inactive"}, {"platform": "Facebook", "month": "ม.ค 26", "period": "2026-01", "name": "Reels FB / ส่วนร่วม", "type": "การมีส่วนร่วมกับโพสต์", "spend": 1296.95, "revenue": 0, "roas": null, "orders": 0, "ctr": "-", "status": "active"}, {"platform": "Facebook", "month": "ม.ค 26", "period": "2026-01", "name": "Bluelab/ DK / SLIDE/ Mes - DEC", "type": "การสนทนาผ่านการส่งข้อความที่เริ่มขึ", "spend": 1247.59, "revenue": 0, "roas": null, "orders": 1.0, "ctr": "-", "status": "inactive"}, {"platform": "Facebook", "month": "ม.ค 26", "period": "2026-01", "name": "Bluelab/ Album/ Mes", "type": "การซื้อบน Meta", "spend": 1238.39, "revenue": 3850.0, "roas": 3.11, "orders": 3.0, "ctr": "-", "status": "inactive"}, {"platform": "Facebook", "month": "ม.ค 26", "period": "2026-01", "name": "รวมอุปกรณ์วัดค่าน้ำ/ Mes", "type": "การซื้อบน Meta", "spend": 873.87, "revenue": 0, "roas": null, "orders": 2.0, "ctr": "-", "status": "active"}, {"platform": "Facebook", "month": "ม.ค 26", "period": "2026-01", "name": "Reels IG / fb", "type": "ThruPlay", "spend": 753.51, "revenue": 0, "roas": null, "orders": 0, "ctr": "-", "status": "active"}, {"platform": "Facebook", "month": "ม.ค 26", "period": "2026-01", "name": "Reels IG / fb", "type": "ThruPlay", "spend": 374.54, "revenue": 0, "roas": null, "orders": 0, "ctr": "-", "status": "active"}, {"platform": "Facebook", "month": "ม.ค 26", "period": "2026-01", "name": "Reels FB / ส่วนร่วม", "type": "การมีส่วนร่วมกับโพสต์", "spend": 198.32, "revenue": 0, "roas": null, "orders": 0, "ctr": "-", "status": "active"}, {"platform": "Facebook", "month": "ม.ค 26", "period": "2026-01", "name": "Reels IG / fb", "type": "ThruPlay", "spend": 122.4, "revenue": 0, "roas": null, "orders": 0, "ctr": "-", "status": "active"}, {"platform": "Facebook", "month": "ม.ค 26", "period": "2026-01", "name": "Reels FB / ส่วนร่วม", "type": "การมีส่วนร่วมกับโพสต์", "spend": 15.38, "revenue": 0, "roas": null, "orders": 0, "ctr": "-", "status": "active"}, {"platform": "Facebook", "month": "ก.พ 26", "period": "2026-02", "name": "รวมอุปกรณ์วัดค่าน้ำ/ Mes", "type": "การซื้อบน Meta", "spend": 1867.73, "revenue": 35220.0, "roas": 18.86, "orders": 1.0, "ctr": "-", "status": "active"}, {"platform": "Facebook", "month": "ก.พ 26", "period": "2026-02", "name": "Bluelab/ Album/ Mes", "type": "การซื้อบน Meta", "spend": 1634.03, "revenue": 1139.0, "roas": 0.7, "orders": 6.0, "ctr": "-", "status": "inactive"}, {"platform": "Facebook", "month": "ก.พ 26", "period": "2026-02", "name": "Bluelab/ DK / SLIDE/ Mes - DEC", "type": "การสนทนาผ่านการส่งข้อความที่เริ่มขึ", "spend": 1392.97, "revenue": 2058.0, "roas": 1.48, "orders": 3.0, "ctr": "-", "status": "inactive"}, {"platform": "Facebook", "month": "ก.พ 26", "period": "2026-02", "name": "Reels FB / ส่วนร่วม", "type": "การมีส่วนร่วมกับโพสต์", "spend": 1363.47, "revenue": 0, "roas": null, "orders": 0, "ctr": "-", "status": "active"}, {"platform": "Facebook", "month": "ก.พ 26", "period": "2026-02", "name": "Reels IG / fb", "type": "ThruPlay", "spend": 774.88, "revenue": 0, "roas": null, "orders": 0, "ctr": "-", "status": "active"}, {"platform": "Facebook", "month": "ก.พ 26", "period": "2026-02", "name": "Reels IG / fb", "type": "ThruPlay", "spend": 358.29, "revenue": 0, "roas": null, "orders": 0, "ctr": "-", "status": "active"}, {"platform": "Facebook", "month": "ก.พ 26", "period": "2026-02", "name": "Reels IG / fb", "type": "ThruPlay", "spend": 188.94, "revenue": 0, "roas": null, "orders": 0, "ctr": "-", "status": "active"}, {"platform": "Facebook", "month": "ก.พ 26", "period": "2026-02", "name": "Reels FB / ส่วนร่วม", "type": "การมีส่วนร่วมกับโพสต์", "spend": 8.23, "revenue": 0, "roas": null, "orders": 0, "ctr": "-", "status": "active"}, {"platform": "Facebook", "month": "มี.ค 26", "period": "2026-03", "name": "รวมอุปกรณ์วัดค่าน้ำ/ Mes", "type": "การซื้อบน Meta", "spend": 2446.42, "revenue": 0, "roas": null, "orders": 1.0, "ctr": "-", "status": "active"}, {"platform": "Facebook", "month": "มี.ค 26", "period": "2026-03", "name": "Bluelab/ Album/ Mes", "type": "การซื้อบน Meta", "spend": 2140.37, "revenue": 0, "roas": null, "orders": 2.0, "ctr": "-", "status": "inactive"}, {"platform": "Facebook", "month": "มี.ค 26", "period": "2026-03", "name": "Bluelab/ DK / SLIDE/ Mes - DEC", "type": "การสนทนาผ่านการส่งข้อความที่เริ่มขึ", "spend": 1836.88, "revenue": 1049.0, "roas": 0.57, "orders": 2.0, "ctr": "-", "status": "inactive"}, {"platform": "Facebook", "month": "มี.ค 26", "period": "2026-03", "name": "Reels FB / ส่วนร่วม", "type": "การมีส่วนร่วมกับโพสต์", "spend": 1102.14, "revenue": 0, "roas": null, "orders": 0, "ctr": "-", "status": "active"}, {"platform": "Facebook", "month": "มี.ค 26", "period": "2026-03", "name": "Reels IG / fb", "type": "ThruPlay", "spend": 824.09, "revenue": 0, "roas": null, "orders": 0, "ctr": "-", "status": "active"}, {"platform": "Facebook", "month": "มี.ค 26", "period": "2026-03", "name": "Reels IG / fb", "type": "ThruPlay", "spend": 486.87, "revenue": 0, "roas": null, "orders": 0, "ctr": "-", "status": "active"}, {"platform": "Facebook", "month": "มี.ค 26", "period": "2026-03", "name": "Reels IG / fb", "type": "ThruPlay", "spend": 388.92, "revenue": 0, "roas": null, "orders": 0, "ctr": "-", "status": "active"}, {"platform": "Facebook", "month": "มี.ค 26", "period": "2026-03", "name": "Reels FB / ส่วนร่วม", "type": "การมีส่วนร่วมกับโพสต์", "spend": 257.35, "revenue": 0, "roas": null, "orders": 0, "ctr": "-", "status": "active"}, {"platform": "Facebook", "month": "มี.ค 26", "period": "2026-03", "name": "Reels FB / ส่วนร่วม", "type": "การมีส่วนร่วมกับโพสต์", "spend": 123.92, "revenue": 0, "roas": null, "orders": 0, "ctr": "-", "status": "active"}, {"platform": "Facebook", "month": "มี.ค 26", "period": "2026-03", "name": "Reels FB / ส่วนร่วม", "type": "การมีส่วนร่วมกับโพสต์", "spend": 3.88, "revenue": 0, "roas": null, "orders": 0, "ctr": "-", "status": "active"}, {"platform": "Facebook", "month": "เม.ย 26", "period": "2026-04", "name": "รวมอุปกรณ์วัดค่าน้ำ/ Mes", "type": "การซื้อบน Meta", "spend": 2203.14, "revenue": 62600.0, "roas": 28.41, "orders": 3.0, "ctr": "-", "status": "active"}, {"platform": "Facebook", "month": "เม.ย 26", "period": "2026-04", "name": "Bluelab/ Album/ Mes", "type": "N/A", "spend": 2059.28, "revenue": 0, "roas": null, "orders": 0, "ctr": "-", "status": "inactive"}, {"platform": "Facebook", "month": "เม.ย 26", "period": "2026-04", "name": "Reels IG / fb", "type": "ThruPlay", "spend": 1473.0, "revenue": 0, "roas": null, "orders": 0, "ctr": "-", "status": "active"}, {"platform": "Facebook", "month": "เม.ย 26", "period": "2026-04", "name": "Bluelab/ DK / SLIDE/ Mes - Apr", "type": "ข้อมูลลูกค้าจาก Meta", "spend": 1179.11, "revenue": 0, "roas": null, "orders": 0, "ctr": "-", "status": "active"}, {"platform": "Facebook", "month": "เม.ย 26", "period": "2026-04", "name": "Reels FB / ส่วนร่วม", "type": "การมีส่วนร่วมกับโพสต์", "spend": 896.52, "revenue": 0, "roas": null, "orders": 0, "ctr": "-", "status": "active"}, {"platform": "Facebook", "month": "เม.ย 26", "period": "2026-04", "name": "Bluelab/ DK / SLIDE/ Mes - DEC", "type": "การสนทนาผ่านการส่งข้อความที่เริ่มขึ", "spend": 569.48, "revenue": 161592.0, "roas": 283.75, "orders": 2.0, "ctr": "-", "status": "inactive"}, {"platform": "Facebook", "month": "เม.ย 26", "period": "2026-04", "name": "Reels FB / ส่วนร่วม", "type": "การมีส่วนร่วมกับโพสต์", "spend": 343.52, "revenue": 0, "roas": null, "orders": 0, "ctr": "-", "status": "active"}, {"platform": "Facebook", "month": "เม.ย 26", "period": "2026-04", "name": "Reels FB / ส่วนร่วม", "type": "การมีส่วนร่วมกับโพสต์", "spend": 230.91, "revenue": 0, "roas": null, "orders": 0, "ctr": "-", "status": "active"}, {"platform": "Facebook", "month": "เม.ย 26", "period": "2026-04", "name": "Reels IG / fb", "type": "ThruPlay", "spend": 158.23, "revenue": 0, "roas": null, "orders": 0, "ctr": "-", "status": "active"}, {"platform": "Lazada", "month": "ธ.ค 25", "period": "2025-12", "name": "Lazada Ads ธ.ค 25", "type": "Performance Ads", "spend": 7234.22, "revenue": 144070.9, "roas": 19.92, "orders": 66, "ctr": "2.76%", "status": "active"}, {"platform": "Lazada", "month": "ม.ค 26", "period": "2026-01", "name": "Lazada Ads ม.ค 26", "type": "Performance Ads", "spend": 6581.37, "revenue": 93191.6, "roas": 14.16, "orders": 54, "ctr": "2.4%", "status": "active"}, {"platform": "Lazada", "month": "ก.พ 26", "period": "2026-02", "name": "Lazada Ads ก.พ 26", "type": "Performance Ads", "spend": 5553.59, "revenue": 167023.97, "roas": 30.07, "orders": 56, "ctr": "2.64%", "status": "active"}, {"platform": "Lazada", "month": "มี.ค 26", "period": "2026-03", "name": "Lazada Ads มี.ค 26", "type": "Performance Ads", "spend": 5809.65, "revenue": 97258.46, "roas": 16.74, "orders": 48, "ctr": "2.83%", "status": "active"}, {"platform": "Lazada", "month": "เม.ย 26", "period": "2026-04", "name": "Lazada Ads เม.ย 26", "type": "Performance Ads", "spend": 4729.69, "revenue": 103093.96, "roas": 21.8, "orders": 47, "ctr": "2.72%", "status": "active"}];
+const LZ_DAILY = [{"d": "2025-12-01", "m": "ธ.ค 25", "p": "2025-12", "sp": 324.34, "rv": 5471.0, "od": 4}, {"d": "2025-12-02", "m": "ธ.ค 25", "p": "2025-12", "sp": 113.84, "rv": 547.0, "od": 2}, {"d": "2025-12-03", "m": "ธ.ค 25", "p": "2025-12", "sp": 177.08, "rv": 3183.5, "od": 4}, {"d": "2025-12-04", "m": "ธ.ค 25", "p": "2025-12", "sp": 87.52, "rv": 0.0, "od": 0}, {"d": "2025-12-05", "m": "ธ.ค 25", "p": "2025-12", "sp": 285.2, "rv": 18515.0, "od": 2}, {"d": "2025-12-06", "m": "ธ.ค 25", "p": "2025-12", "sp": 168.75, "rv": 0.0, "od": 0}, {"d": "2025-12-07", "m": "ธ.ค 25", "p": "2025-12", "sp": 236.72, "rv": 1002.0, "od": 2}, {"d": "2025-12-08", "m": "ธ.ค 25", "p": "2025-12", "sp": 277.16, "rv": 2878.0, "od": 2}, {"d": "2025-12-09", "m": "ธ.ค 25", "p": "2025-12", "sp": 128.47, "rv": 1250.0, "od": 1}, {"d": "2025-12-10", "m": "ธ.ค 25", "p": "2025-12", "sp": 351.4, "rv": 3741.0, "od": 2}, {"d": "2025-12-11", "m": "ธ.ค 25", "p": "2025-12", "sp": 252.04, "rv": 0.0, "od": 0}, {"d": "2025-12-12", "m": "ธ.ค 25", "p": "2025-12", "sp": 349.68, "rv": 11051.67, "od": 7}, {"d": "2025-12-13", "m": "ธ.ค 25", "p": "2025-12", "sp": 298.54, "rv": 2863.79, "od": 3}, {"d": "2025-12-14", "m": "ธ.ค 25", "p": "2025-12", "sp": 300.41, "rv": 972.0, "od": 3}, {"d": "2025-12-15", "m": "ธ.ค 25", "p": "2025-12", "sp": 295.41, "rv": 33278.0, "od": 2}, {"d": "2025-12-16", "m": "ธ.ค 25", "p": "2025-12", "sp": 321.52, "rv": 2349.5, "od": 2}, {"d": "2025-12-17", "m": "ธ.ค 25", "p": "2025-12", "sp": 309.67, "rv": 3455.5, "od": 3}, {"d": "2025-12-18", "m": "ธ.ค 25", "p": "2025-12", "sp": 207.04, "rv": 12137.0, "od": 7}, {"d": "2025-12-19", "m": "ธ.ค 25", "p": "2025-12", "sp": 211.56, "rv": 8849.0, "od": 5}, {"d": "2025-12-20", "m": "ธ.ค 25", "p": "2025-12", "sp": 200.67, "rv": 433.0, "od": 1}, {"d": "2025-12-21", "m": "ธ.ค 25", "p": "2025-12", "sp": 203.68, "rv": 1100.0, "od": 1}, {"d": "2025-12-22", "m": "ธ.ค 25", "p": "2025-12", "sp": 100.73, "rv": 1435.5, "od": 1}, {"d": "2025-12-23", "m": "ธ.ค 25", "p": "2025-12", "sp": 99.96, "rv": 3500.0, "od": 2}, {"d": "2025-12-24", "m": "ธ.ค 25", "p": "2025-12", "sp": 160.44, "rv": 427.11, "od": 1}, {"d": "2025-12-25", "m": "ธ.ค 25", "p": "2025-12", "sp": 236.5, "rv": 3213.33, "od": 1}, {"d": "2025-12-26", "m": "ธ.ค 25", "p": "2025-12", "sp": 376.11, "rv": 16199.0, "od": 2}, {"d": "2025-12-27", "m": "ธ.ค 25", "p": "2025-12", "sp": 231.96, "rv": 0.0, "od": 0}, {"d": "2025-12-28", "m": "ธ.ค 25", "p": "2025-12", "sp": 214.28, "rv": 0.0, "od": 0}, {"d": "2025-12-29", "m": "ธ.ค 25", "p": "2025-12", "sp": 355.22, "rv": 6219.0, "od": 6}, {"d": "2025-12-30", "m": "ธ.ค 25", "p": "2025-12", "sp": 222.49, "rv": 0.0, "od": 0}, {"d": "2025-12-31", "m": "ธ.ค 25", "p": "2025-12", "sp": 135.83, "rv": 0.0, "od": 0}, {"d": "2026-01-01", "m": "ม.ค 26", "p": "2026-01", "sp": 191.35, "rv": 4844.6, "od": 4}, {"d": "2026-01-02", "m": "ม.ค 26", "p": "2026-01", "sp": 111.13, "rv": 0.0, "od": 0}, {"d": "2026-01-03", "m": "ม.ค 26", "p": "2026-01", "sp": 263.54, "rv": 2998.5, "od": 1}, {"d": "2026-01-04", "m": "ม.ค 26", "p": "2026-01", "sp": 180.87, "rv": 1653.5, "od": 1}, {"d": "2026-01-05", "m": "ม.ค 26", "p": "2026-01", "sp": 238.9, "rv": 4659.0, "od": 1}, {"d": "2026-01-06", "m": "ม.ค 26", "p": "2026-01", "sp": 180.7, "rv": 1400.0, "od": 1}, {"d": "2026-01-07", "m": "ม.ค 26", "p": "2026-01", "sp": 270.96, "rv": 9537.0, "od": 3}, {"d": "2026-01-08", "m": "ม.ค 26", "p": "2026-01", "sp": 267.77, "rv": 6658.5, "od": 8}, {"d": "2026-01-09", "m": "ม.ค 26", "p": "2026-01", "sp": 250.28, "rv": 535.0, "od": 1}, {"d": "2026-01-10", "m": "ม.ค 26", "p": "2026-01", "sp": 202.43, "rv": 0.0, "od": 0}, {"d": "2026-01-11", "m": "ม.ค 26", "p": "2026-01", "sp": 250.22, "rv": 11863.0, "od": 4}, {"d": "2026-01-12", "m": "ม.ค 26", "p": "2026-01", "sp": 245.49, "rv": 698.0, "od": 1}, {"d": "2026-01-13", "m": "ม.ค 26", "p": "2026-01", "sp": 270.16, "rv": 6918.0, "od": 3}, {"d": "2026-01-14", "m": "ม.ค 26", "p": "2026-01", "sp": 250.04, "rv": 0.0, "od": 0}, {"d": "2026-01-15", "m": "ม.ค 26", "p": "2026-01", "sp": 207.88, "rv": 854.0, "od": 2}, {"d": "2026-01-16", "m": "ม.ค 26", "p": "2026-01", "sp": 231.79, "rv": 1888.0, "od": 1}, {"d": "2026-01-17", "m": "ม.ค 26", "p": "2026-01", "sp": 192.43, "rv": 645.0, "od": 1}, {"d": "2026-01-18", "m": "ม.ค 26", "p": "2026-01", "sp": 195.41, "rv": 0.0, "od": 0}, {"d": "2026-01-19", "m": "ม.ค 26", "p": "2026-01", "sp": 252.59, "rv": 5406.5, "od": 3}, {"d": "2026-01-20", "m": "ม.ค 26", "p": "2026-01", "sp": 217.83, "rv": 0.0, "od": 0}, {"d": "2026-01-21", "m": "ม.ค 26", "p": "2026-01", "sp": 255.55, "rv": 4843.0, "od": 3}, {"d": "2026-01-22", "m": "ม.ค 26", "p": "2026-01", "sp": 194.76, "rv": 1233.0, "od": 1}, {"d": "2026-01-23", "m": "ม.ค 26", "p": "2026-01", "sp": 120.44, "rv": 553.0, "od": 1}, {"d": "2026-01-24", "m": "ม.ค 26", "p": "2026-01", "sp": 190.31, "rv": 519.0, "od": 2}, {"d": "2026-01-25", "m": "ม.ค 26", "p": "2026-01", "sp": 205.05, "rv": 0.0, "od": 0}, {"d": "2026-01-26", "m": "ม.ค 26", "p": "2026-01", "sp": 177.17, "rv": 611.0, "od": 1}, {"d": "2026-01-27", "m": "ม.ค 26", "p": "2026-01", "sp": 272.87, "rv": 5695.0, "od": 3}, {"d": "2026-01-28", "m": "ม.ค 26", "p": "2026-01", "sp": 252.82, "rv": 12326.0, "od": 5}, {"d": "2026-01-29", "m": "ม.ค 26", "p": "2026-01", "sp": 255.73, "rv": 6853.0, "od": 3}, {"d": "2026-01-30", "m": "ม.ค 26", "p": "2026-01", "sp": 107.88, "rv": 0.0, "od": 0}, {"d": "2026-01-31", "m": "ม.ค 26", "p": "2026-01", "sp": 77.02, "rv": 0.0, "od": 0}, {"d": "2026-02-01", "m": "ก.พ 26", "p": "2026-02", "sp": 266.36, "rv": 6529.0, "od": 2}, {"d": "2026-02-02", "m": "ก.พ 26", "p": "2026-02", "sp": 216.63, "rv": 1756.0, "od": 3}, {"d": "2026-02-03", "m": "ก.พ 26", "p": "2026-02", "sp": 146.55, "rv": 531.0, "od": 1}, {"d": "2026-02-04", "m": "ก.พ 26", "p": "2026-02", "sp": 252.36, "rv": 22967.0, "od": 4}, {"d": "2026-02-05", "m": "ก.พ 26", "p": "2026-02", "sp": 264.61, "rv": 19500.5, "od": 4}, {"d": "2026-02-06", "m": "ก.พ 26", "p": "2026-02", "sp": 266.93, "rv": 43774.5, "od": 5}, {"d": "2026-02-07", "m": "ก.พ 26", "p": "2026-02", "sp": 161.12, "rv": 0.0, "od": 0}, {"d": "2026-02-08", "m": "ก.พ 26", "p": "2026-02", "sp": 211.63, "rv": 6016.5, "od": 2}, {"d": "2026-02-09", "m": "ก.พ 26", "p": "2026-02", "sp": 164.01, "rv": 1446.0, "od": 2}, {"d": "2026-02-10", "m": "ก.พ 26", "p": "2026-02", "sp": 256.16, "rv": 0.0, "od": 0}, {"d": "2026-02-11", "m": "ก.พ 26", "p": "2026-02", "sp": 129.82, "rv": 424.0, "od": 2}, {"d": "2026-02-12", "m": "ก.พ 26", "p": "2026-02", "sp": 120.08, "rv": 3306.0, "od": 3}, {"d": "2026-02-13", "m": "ก.พ 26", "p": "2026-02", "sp": 242.73, "rv": 4063.0, "od": 2}, {"d": "2026-02-14", "m": "ก.พ 26", "p": "2026-02", "sp": 256.93, "rv": 23870.0, "od": 2}, {"d": "2026-02-15", "m": "ก.พ 26", "p": "2026-02", "sp": 145.35, "rv": 1272.91, "od": 2}, {"d": "2026-02-16", "m": "ก.พ 26", "p": "2026-02", "sp": 49.82, "rv": 438.7, "od": 2}, {"d": "2026-02-17", "m": "ก.พ 26", "p": "2026-02", "sp": 275.0, "rv": 4720.0, "od": 4}, {"d": "2026-02-18", "m": "ก.พ 26", "p": "2026-02", "sp": 202.33, "rv": 377.0, "od": 1}, {"d": "2026-02-19", "m": "ก.พ 26", "p": "2026-02", "sp": 115.41, "rv": 0.0, "od": 0}, {"d": "2026-02-20", "m": "ก.พ 26", "p": "2026-02", "sp": 127.24, "rv": 888.0, "od": 1}, {"d": "2026-02-21", "m": "ก.พ 26", "p": "2026-02", "sp": 80.51, "rv": 0.0, "od": 0}, {"d": "2026-02-22", "m": "ก.พ 26", "p": "2026-02", "sp": 185.96, "rv": 3987.0, "od": 2}, {"d": "2026-02-23", "m": "ก.พ 26", "p": "2026-02", "sp": 201.54, "rv": 5823.0, "od": 2}, {"d": "2026-02-24", "m": "ก.พ 26", "p": "2026-02", "sp": 229.81, "rv": 329.0, "od": 1}, {"d": "2026-02-25", "m": "ก.พ 26", "p": "2026-02", "sp": 260.01, "rv": 3678.0, "od": 3}, {"d": "2026-02-26", "m": "ก.พ 26", "p": "2026-02", "sp": 235.48, "rv": 4206.86, "od": 3}, {"d": "2026-02-27", "m": "ก.พ 26", "p": "2026-02", "sp": 252.93, "rv": 2376.0, "od": 1}, {"d": "2026-02-28", "m": "ก.พ 26", "p": "2026-02", "sp": 236.28, "rv": 4744.0, "od": 2}, {"d": "2026-03-01", "m": "มี.ค 26", "p": "2026-03", "sp": 275.0, "rv": 3197.0, "od": 2}, {"d": "2026-03-02", "m": "มี.ค 26", "p": "2026-03", "sp": 282.4, "rv": 10775.0, "od": 5}, {"d": "2026-03-03", "m": "มี.ค 26", "p": "2026-03", "sp": 259.59, "rv": 1415.39, "od": 3}, {"d": "2026-03-04", "m": "มี.ค 26", "p": "2026-03", "sp": 428.6, "rv": 10617.5, "od": 3}, {"d": "2026-03-05", "m": "มี.ค 26", "p": "2026-03", "sp": 425.91, "rv": 975.0, "od": 1}, {"d": "2026-03-06", "m": "มี.ค 26", "p": "2026-03", "sp": 351.23, "rv": 880.0, "od": 1}, {"d": "2026-03-07", "m": "มี.ค 26", "p": "2026-03", "sp": 357.71, "rv": 5858.0, "od": 4}, {"d": "2026-03-08", "m": "มี.ค 26", "p": "2026-03", "sp": 274.5, "rv": 6502.5, "od": 4}, {"d": "2026-03-09", "m": "มี.ค 26", "p": "2026-03", "sp": 180.05, "rv": 0.0, "od": 0}, {"d": "2026-03-10", "m": "มี.ค 26", "p": "2026-03", "sp": 232.71, "rv": 6300.08, "od": 4}, {"d": "2026-03-11", "m": "มี.ค 26", "p": "2026-03", "sp": 271.79, "rv": 24795.5, "od": 3}, {"d": "2026-03-12", "m": "มี.ค 26", "p": "2026-03", "sp": 256.21, "rv": 0.0, "od": 0}, {"d": "2026-03-13", "m": "มี.ค 26", "p": "2026-03", "sp": 261.4, "rv": 178.0, "od": 1}, {"d": "2026-03-14", "m": "มี.ค 26", "p": "2026-03", "sp": 226.71, "rv": 3687.0, "od": 2}, {"d": "2026-03-15", "m": "มี.ค 26", "p": "2026-03", "sp": 229.74, "rv": 1195.0, "od": 2}, {"d": "2026-03-16", "m": "มี.ค 26", "p": "2026-03", "sp": 252.24, "rv": 1450.0, "od": 1}, {"d": "2026-03-17", "m": "มี.ค 26", "p": "2026-03", "sp": 179.85, "rv": 1418.0, "od": 1}, {"d": "2026-03-18", "m": "มี.ค 26", "p": "2026-03", "sp": 115.73, "rv": 1525.0, "od": 1}, {"d": "2026-03-19", "m": "มี.ค 26", "p": "2026-03", "sp": 150.43, "rv": 3144.0, "od": 2}, {"d": "2026-03-20", "m": "มี.ค 26", "p": "2026-03", "sp": 132.23, "rv": 0.0, "od": 0}, {"d": "2026-03-21", "m": "มี.ค 26", "p": "2026-03", "sp": 0.0, "rv": 2763.06, "od": 2}, {"d": "2026-03-22", "m": "มี.ค 26", "p": "2026-03", "sp": 0.0, "rv": 0.0, "od": 0}, {"d": "2026-03-23", "m": "มี.ค 26", "p": "2026-03", "sp": 0.0, "rv": 0.0, "od": 0}, {"d": "2026-03-24", "m": "มี.ค 26", "p": "2026-03", "sp": 15.35, "rv": 0.0, "od": 0}, {"d": "2026-03-25", "m": "มี.ค 26", "p": "2026-03", "sp": 106.46, "rv": 8031.43, "od": 3}, {"d": "2026-03-26", "m": "มี.ค 26", "p": "2026-03", "sp": 201.58, "rv": 0.0, "od": 0}, {"d": "2026-03-27", "m": "มี.ค 26", "p": "2026-03", "sp": 220.0, "rv": 1603.0, "od": 1}, {"d": "2026-03-28", "m": "มี.ค 26", "p": "2026-03", "sp": 122.23, "rv": 0.0, "od": 0}, {"d": "2026-03-29", "m": "มี.ค 26", "p": "2026-03", "sp": 0.0, "rv": 855.0, "od": 1}, {"d": "2026-03-30", "m": "มี.ค 26", "p": "2026-03", "sp": 0.0, "rv": 93.0, "od": 1}, {"d": "2026-03-31", "m": "มี.ค 26", "p": "2026-03", "sp": 0.0, "rv": 0.0, "od": 0}, {"d": "2026-04-01", "m": "เม.ย 26", "p": "2026-04", "sp": 0.0, "rv": 0.0, "od": 0}, {"d": "2026-04-02", "m": "เม.ย 26", "p": "2026-04", "sp": 0.0, "rv": 0.0, "od": 0}, {"d": "2026-04-03", "m": "เม.ย 26", "p": "2026-04", "sp": 0.0, "rv": 0.0, "od": 0}, {"d": "2026-04-04", "m": "เม.ย 26", "p": "2026-04", "sp": 0.0, "rv": 8152.1, "od": 1}, {"d": "2026-04-05", "m": "เม.ย 26", "p": "2026-04", "sp": 0.0, "rv": 0.0, "od": 0}, {"d": "2026-04-06", "m": "เม.ย 26", "p": "2026-04", "sp": 0.0, "rv": 0.0, "od": 0}, {"d": "2026-04-07", "m": "เม.ย 26", "p": "2026-04", "sp": 0.0, "rv": 0.0, "od": 0}, {"d": "2026-04-08", "m": "เม.ย 26", "p": "2026-04", "sp": 0.0, "rv": 0.0, "od": 0}, {"d": "2026-04-09", "m": "เม.ย 26", "p": "2026-04", "sp": 77.93, "rv": 0.0, "od": 0}, {"d": "2026-04-10", "m": "เม.ย 26", "p": "2026-04", "sp": 167.45, "rv": 1084.0, "od": 4}, {"d": "2026-04-11", "m": "เม.ย 26", "p": "2026-04", "sp": 155.43, "rv": 207.0, "od": 1}, {"d": "2026-04-12", "m": "เม.ย 26", "p": "2026-04", "sp": 117.19, "rv": 260.0, "od": 3}, {"d": "2026-04-13", "m": "เม.ย 26", "p": "2026-04", "sp": 214.98, "rv": 11871.0, "od": 4}, {"d": "2026-04-14", "m": "เม.ย 26", "p": "2026-04", "sp": 258.66, "rv": 6790.0, "od": 1}, {"d": "2026-04-15", "m": "เม.ย 26", "p": "2026-04", "sp": 253.45, "rv": 13289.16, "od": 6}, {"d": "2026-04-16", "m": "เม.ย 26", "p": "2026-04", "sp": 250.29, "rv": 3351.0, "od": 2}, {"d": "2026-04-17", "m": "เม.ย 26", "p": "2026-04", "sp": 262.28, "rv": 1982.3, "od": 4}, {"d": "2026-04-18", "m": "เม.ย 26", "p": "2026-04", "sp": 214.38, "rv": 0.0, "od": 0}, {"d": "2026-04-19", "m": "เม.ย 26", "p": "2026-04", "sp": 219.88, "rv": 5400.0, "od": 2}, {"d": "2026-04-20", "m": "เม.ย 26", "p": "2026-04", "sp": 251.2, "rv": 2958.0, "od": 2}, {"d": "2026-04-21", "m": "เม.ย 26", "p": "2026-04", "sp": 261.52, "rv": 8856.0, "od": 2}, {"d": "2026-04-22", "m": "เม.ย 26", "p": "2026-04", "sp": 252.45, "rv": 4840.0, "od": 2}, {"d": "2026-04-23", "m": "เม.ย 26", "p": "2026-04", "sp": 253.28, "rv": 0.0, "od": 0}, {"d": "2026-04-24", "m": "เม.ย 26", "p": "2026-04", "sp": 257.22, "rv": 15393.4, "od": 3}, {"d": "2026-04-25", "m": "เม.ย 26", "p": "2026-04", "sp": 252.99, "rv": 0.0, "od": 0}, {"d": "2026-04-26", "m": "เม.ย 26", "p": "2026-04", "sp": 258.47, "rv": 0.0, "od": 0}, {"d": "2026-04-27", "m": "เม.ย 26", "p": "2026-04", "sp": 108.07, "rv": 1551.0, "od": 3}, {"d": "2026-04-28", "m": "เม.ย 26", "p": "2026-04", "sp": 117.26, "rv": 1024.0, "od": 3}, {"d": "2026-04-29", "m": "เม.ย 26", "p": "2026-04", "sp": 271.28, "rv": 14985.0, "od": 3}, {"d": "2026-04-30", "m": "เม.ย 26", "p": "2026-04", "sp": 254.03, "rv": 1100.0, "od": 1}];
+const MONTHS = ['ธ.ค 25','ม.ค 26','ก.พ 26','มี.ค 26','เม.ย 26'];
+const PERIODS = ['2025-12','2026-01','2026-02','2026-03','2026-04'];
+
+let currentMetric = 'roas';
+let currentPlat = 'all';
+let sortCol = 'spend'; let sortDir = -1;
+let barChart, srChart, roasChart;
+
+function fmt(n, prefix='฿', decimals=0){
+  if(n===null||n===undefined||n==='-') return '—';
+  const v = parseFloat(n);
+  if(isNaN(v)) return '—';
+  if(prefix==='฿'){
+    if(v>=1000000) return '฿'+( v/1000000).toFixed(1)+'M';
+    if(v>=1000) return '฿'+(v/1000).toFixed(1)+'K';
+    return '฿'+v.toFixed(decimals);
+  }
+  return v.toFixed(decimals)+prefix;
+}
+
+function fmtN(n, dec=0){ if(n===null||n==='-') return '—'; return parseFloat(n).toFixed(dec); }
+
+function getFiltered(period){
+  const sh = period==='all' ? SHOPEE : SHOPEE.filter(m=>m.period===period);
+  const fb = period==='all' ? FB : FB.filter(m=>m.period===period);
+  const lz = period==='all' ? LZ : LZ.filter(m=>m.period===period);
+  return {sh, fb, lz};
+}
+
+function sumField(arr, field){ return arr.reduce((a,b)=> a + (parseFloat(b[field])||0), 0); }
+
+function computeKPIs(period){
+  const {sh,fb,lz} = getFiltered(period);
+  const totalSpend = sumField(sh,'spend') + sumField(fb,'spend') + sumField(lz,'spend');
+  const totalRev   = sumField(sh,'revenue') + sumField(fb,'revenue') + sumField(lz,'revenue');
+  const totalOrd   = sumField(sh,'orders') + sumField(lz,'orders') + sumField(fb,'purchases');
+  const avgRoas    = totalSpend > 0 ? totalRev/totalSpend : 0;
+  const totalClicks = sumField(sh,'clicks') + sumField(lz,'clicks');
+  const totalImp    = sumField(sh,'impressions') + sumField(lz,'impressions');
+  const avgCtr  = totalImp > 0 ? totalClicks/totalImp*100 : 0;
+  const avgCpc  = totalClicks > 0 ? (sumField(sh,'spend')+sumField(lz,'spend'))/totalClicks : 0;
+  return {totalSpend, totalRev, totalOrd, avgRoas, avgCtr, avgCpc};
+}
+
+function renderKPIs(period){
+  const kpis = computeKPIs(period);
+  const {sh,fb,lz} = getFiltered(period);
+
+  // Platform breakdowns
+  const shSpend=sumField(sh,'spend'), fbSpend=sumField(fb,'spend'), lzSpend=sumField(lz,'spend');
+  const shRev=sumField(sh,'revenue'), fbRev=sumField(fb,'revenue'), lzRev=sumField(lz,'revenue');
+  const shOrd=sumField(sh,'orders'), fbPur=sumField(fb,'purchases'), lzOrd=sumField(lz,'orders');
+  const shRoas=shSpend>0?shRev/shSpend:0, lzRoas=lzSpend>0?lzRev/lzSpend:0, fbRoas=fbSpend>0?fbRev/fbSpend:0;
+  const shCtr=sumField(sh,'impressions')>0?sumField(sh,'clicks')/sumField(sh,'impressions')*100:0;
+  const lzCtr=sumField(lz,'impressions')>0?sumField(lz,'clicks')/sumField(lz,'impressions')*100:0;
+  const shCpc=sumField(sh,'clicks')>0?shSpend/sumField(sh,'clicks'):0;
+  const lzCpc=sumField(lz,'clicks')>0?lzSpend/sumField(lz,'clicks'):0;
+
+  // Sparkline data (all-time per-month for the field)
+  const sparkData = (arr, field) => arr.map(m=>parseFloat(m[field])||0);
+  const spendSpark = MONTHS.map((_,i)=>(parseFloat(SHOPEE[i]?.spend||0)+parseFloat(FB[i]?.spend||0)+parseFloat(LZ[i]?.spend||0)));
+  const revSpark   = MONTHS.map((_,i)=>(parseFloat(SHOPEE[i]?.revenue||0)+parseFloat(FB[i]?.revenue||0)+parseFloat(LZ[i]?.revenue||0)));
+  const roasSpark  = MONTHS.map((_,i)=>{const s=spendSpark[i]; return s>0?revSpark[i]/s:0;});
+  const ordSpark   = MONTHS.map((_,i)=>(parseFloat(SHOPEE[i]?.orders||0)+parseFloat(FB[i]?.purchases||0)+parseFloat(LZ[i]?.orders||0)));
+  const ctrSpark   = MONTHS.map((_,i)=>{const imp=(parseFloat(SHOPEE[i]?.impressions||0)+parseFloat(LZ[i]?.impressions||0)); const cl=(parseFloat(SHOPEE[i]?.clicks||0)+parseFloat(LZ[i]?.clicks||0)); return imp>0?cl/imp*100:0;});
+  const cpcSpark   = MONTHS.map((_,i)=>{const cl=(parseFloat(SHOPEE[i]?.clicks||0)+parseFloat(LZ[i]?.clicks||0)); const sp=(parseFloat(SHOPEE[i]?.spend||0)+parseFloat(LZ[i]?.spend||0)); return cl>0?sp/cl:0;});
+
+  function makeSpark(data, color, highlightIdx){
+    const max=Math.max(...data,0.001), min=Math.min(...data);
+    const W=100, H=28, pad=2;
+    const xs=data.map((_,i)=>pad+i*(W-2*pad)/(data.length-1));
+    const ys=data.map(v=>H-pad-(v-min)/(max-min+0.001)*(H-2*pad));
+    const pts=xs.map((x,i)=>x+','+ys[i]).join(' ');
+    const polyFill=pts+` ${xs[xs.length-1]},${H} ${xs[0]},${H}`;
+    let dots='';
+    if(highlightIdx>=0 && highlightIdx<data.length){
+      dots=`<circle cx="${xs[highlightIdx]}" cy="${ys[highlightIdx]}" r="3" fill="${color}" stroke="var(--surface)" stroke-width="1.5"/>`;
+    }
+    return `<svg class="kpi-sparkline" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+      <polygon points="${polyFill}" fill="${color}" opacity="0.12"/>
+      <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+      ${dots}
+    </svg>`;
+  }
+
+  const hi = period==='all' ? -1 : PERIODS.indexOf(period);
+  const prev = period==='all' ? null : (() => {
+    const idx = PERIODS.indexOf(period);
+    return idx > 0 ? computeKPIs(PERIODS[idx-1]) : null;
+  })();
+  const delta = (cur, p, field) => {
+    if(!p) return '';
+    const d = ((cur[field]-p[field])/Math.abs(p[field]))*100;
+    if(isNaN(d)||!isFinite(d)) return '';
+    const cls = d>=0?'pos':'neg';
+    return `<div class="kpi-delta ${cls}">${d>=0?'+':''}${d.toFixed(1)}% vs เดือนก่อน</div>`;
+  };
+
+  const bd = (items) => `<div class="kpi-breakdown">${items.map(([c,l,v])=>`<span class="kbi ${c}">${l} ${v}</span>`).join('')}</div>`;
+
+  document.getElementById('kpi-period-label').textContent = period==='all'?'ทั้ง 5 เดือน':MONTHS[PERIODS.indexOf(period)];
+  document.getElementById('kpi-grid').innerHTML = `
+    <div class="kpi-card spend">
+      <div class="kpi-label">Total Spend</div>
+      <div class="kpi-value">${fmt(kpis.totalSpend)}</div>
+      ${bd([['fb','FB',fmt(fbSpend)],['sh','SP',fmt(shSpend)],['lz','LZ',fmt(lzSpend)]])}
+      ${makeSpark(spendSpark,'#ef4444',hi)}
+      ${delta(kpis,prev,'totalSpend')}
+    </div>
+    <div class="kpi-card revenue">
+      <div class="kpi-label">Total Revenue</div>
+      <div class="kpi-value">${fmt(kpis.totalRev)}</div>
+      ${bd([['fb','FB',fmt(fbRev)],['sh','SP',fmt(shRev)],['lz','LZ',fmt(lzRev)]])}
+      ${makeSpark(revSpark,'#10b981',hi)}
+      ${delta(kpis,prev,'totalRev')}
+    </div>
+    <div class="kpi-card roas">
+      <div class="kpi-label">Avg ROAS</div>
+      <div class="kpi-value">${kpis.avgRoas.toFixed(1)}x</div>
+      ${bd([['fb','FB',fbRoas.toFixed(1)+'x'],['sh','SP',shRoas.toFixed(1)+'x'],['lz','LZ',lzRoas.toFixed(1)+'x']])}
+      ${makeSpark(roasSpark,'#8b5cf6',hi)}
+      ${delta(kpis,prev,'avgRoas')}
+    </div>
+    <div class="kpi-card orders">
+      <div class="kpi-label">Total Orders</div>
+      <div class="kpi-value">${Math.round(kpis.totalOrd).toLocaleString()}</div>
+      ${bd([['fb','FB',Math.round(fbPur)],['sh','SP',Math.round(shOrd)],['lz','LZ',Math.round(lzOrd)]])}
+      ${makeSpark(ordSpark,'#185FA5',hi)}
+      ${delta(kpis,prev,'totalOrd')}
+    </div>
+    <div class="kpi-card ctr">
+      <div class="kpi-label">Avg CTR</div>
+      <div class="kpi-value">${kpis.avgCtr.toFixed(2)}%</div>
+      ${bd([['sh','SP',shCtr.toFixed(2)+'%'],['lz','LZ',lzCtr.toFixed(2)+'%']])}
+      ${makeSpark(ctrSpark,'#f59e0b',hi)}
+      ${delta(kpis,prev,'avgCtr')}
+    </div>
+    <div class="kpi-card cpc">
+      <div class="kpi-label">Avg CPC</div>
+      <div class="kpi-value">${fmt(kpis.avgCpc,'฿',2)}</div>
+      ${bd([['sh','SP',fmt(shCpc,'฿',2)],['lz','LZ',fmt(lzCpc,'฿',2)]])}
+      ${makeSpark(cpcSpark,'#EE4D2D',hi)}
+      ${delta(kpis,prev,'avgCpc')}
+    </div>`;
+}
+
+// BAR CHART
+function getCompareData(metric, period){
+  const {sh,fb,lz} = getFiltered(period);
+  const safeAvg = (arr, field, den) => {
+    const s = sumField(arr, field); const d = sumField(arr, den||field);
+    return den ? (d>0?s/d:0) : (arr.length?s/arr.length:0);
+  };
+  if(metric==='roas'){
+    const shRoas = sumField(sh,'spend')>0? sumField(sh,'revenue')/sumField(sh,'spend'):0;
+    const lzRoas = sumField(lz,'spend')>0? sumField(lz,'revenue')/sumField(lz,'spend'):0;
+    const fbRoas = sumField(fb,'spend')>0? sumField(fb,'revenue')/sumField(fb,'spend'):0;
+    return {fb:+fbRoas.toFixed(2), sh:+shRoas.toFixed(2), lz:+lzRoas.toFixed(2), label:'ROAS (x)', bm:3, bmLabel:'Benchmark ≥ 3.0x'};
+  }
+  if(metric==='ctr'){
+    const shCtr = sumField(sh,'impressions')>0? sumField(sh,'clicks')/sumField(sh,'impressions')*100:0;
+    const lzCtr = sumField(lz,'impressions')>0? sumField(lz,'clicks')/sumField(lz,'impressions')*100:0;
+    const fbCtr = sumField(fb,'impressions')>0? sumField(fb,'results')/sumField(fb,'impressions')*100:0;
+    return {fb:+fbCtr.toFixed(2), sh:+shCtr.toFixed(2), lz:+lzCtr.toFixed(2), label:'CTR (%) — FB แสดง Engagement Rate', bm:1, bmLabel:'Benchmark ≥ 1.0%', fbNote:'⚠️ Facebook = Engagement Rate (Results÷Impressions) ≠ CTR จริง — ไม่เปรียบเทียบตรงกัน'};
+  }
+  if(metric==='cpc'){
+    const shCpc = sumField(sh,'clicks')>0? sumField(sh,'spend')/sumField(sh,'clicks'):0;
+    const lzCpc = sumField(lz,'clicks')>0? sumField(lz,'spend')/sumField(lz,'clicks'):0;
+    const fbCpc = sumField(fb,'results')>0? sumField(fb,'spend')/sumField(fb,'results'):0;
+    return {fb:+fbCpc.toFixed(2), sh:+shCpc.toFixed(2), lz:+lzCpc.toFixed(2), label:'CPC / CPR (฿)', bm:null, fbNote:'FB = Cost per Result'};
+  }
+  if(metric==='orders'){
+    const shO = sumField(sh,'orders'), lzO = sumField(lz,'orders'), fbO = sumField(fb,'purchases');
+    return {fb:fbO, sh:shO, lz:lzO, label:'Orders / Purchases', bm:null};
+  }
+  return {fb:0,sh:0,lz:0,label:''};
+}
+
+function buildBarChart(period){
+  const d = getCompareData(currentMetric, period);
+  const ctx = document.getElementById('barChart').getContext('2d');
+  if(barChart) barChart.destroy();
+  const datasets = [
+    {label:'Facebook', data:[d.fb,null,null], backgroundColor:'rgba(24,95,165,0.8)', borderColor:'#185FA5', borderWidth:2, borderRadius:6},
+    {label:'Shopee',   data:[null,d.sh,null], backgroundColor:'rgba(238,77,45,0.8)',  borderColor:'#EE4D2D', borderWidth:2, borderRadius:6},
+    {label:'Lazada',   data:[null,null,d.lz], backgroundColor:'rgba(15,19,109,0.8)', borderColor:'#0F136D', borderWidth:2, borderRadius:6},
+  ];
+  if(d.bm!==null && d.bm!==undefined){
+    const bmVal = d.bm;
+    datasets.push({label:`Benchmark (${bmVal})`, data:[bmVal,bmVal,bmVal], type:'line', borderColor:'#ef4444', borderWidth:2, borderDash:[6,4], pointRadius:0, fill:false, tension:0});
+  }
+  barChart = new Chart(ctx, {
+    type:'bar',
+    data:{labels:['Facebook','Shopee','Lazada'], datasets},
+    options:{
+      responsive:true, maintainAspectRatio:true,
+      plugins:{legend:{display:false}, tooltip:{callbacks:{label(ctx){
+        const v = ctx.raw;
+        if(v===null) return null;
+        if(currentMetric==='roas') return ` ${v}x`;
+        if(currentMetric==='ctr') return ` ${v}%`;
+        if(currentMetric==='cpc') return ` ฿${v}`;
+        return ` ${v}`;
+      }}}},
+      scales:{
+        y:{grid:{color:'rgba(128,128,128,0.1)'},ticks:{color:'#64748b',font:{size:11}},title:{display:true,text:d.label,color:'#64748b',font:{size:11}}},
+        x:{grid:{display:false},ticks:{color:'#64748b',font:{size:12,weight:'600'}}}
+      }
+    }
+  });
+  // Benchmark note
+  let note = '';
+  if(d.bm!=null) note += `<div class="bench-item"><div class="bench-line" style="border-color:#ef4444"></div>ROAS Benchmark ≥ ${d.bm}x</div>`;
+  if(currentMetric==='ctr') note += `<div class="bench-item"><div class="bench-line" style="border-color:#ef4444"></div>CTR Benchmark ≥ 1% &nbsp;|&nbsp; Facebook แสดง Result Rate (ต่างจาก CTR ปกติ)</div>`;
+  if(d.fbNote && currentMetric!=='ctr') note += `<div class="bench-item">⚠️ ${d.fbNote}</div>`;
+  document.getElementById('benchmark-note').innerHTML = note;
+}
+
+function setCompareMetric(m, btn){
+  currentMetric = m;
+  document.querySelectorAll('#metric-btns .metric-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const period = document.getElementById('globalMonthFilter').value;
+  buildBarChart(period);
+}
+
+// TREND CHARTS
+function buildTrendCharts(){
+  const isDark = document.documentElement.getAttribute('data-theme')==='dark';
+  const gridColor = isDark?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.06)';
+  const tickColor = isDark?'#8b949e':'#64748b';
+
+  // Spend vs Revenue
+  const ctx1 = document.getElementById('spendRevenueChart').getContext('2d');
+  if(srChart) srChart.destroy();
+  srChart = new Chart(ctx1, {
+    type:'line',
+    data:{
+      labels: MONTHS,
+      datasets:[
+        {label:'Shopee Revenue', data:SHOPEE.map(m=>m.revenue), borderColor:'#EE4D2D', backgroundColor:'rgba(238,77,45,0.08)', fill:true, tension:.4, borderWidth:2.5, pointRadius:4, pointBackgroundColor:'#EE4D2D'},
+        {label:'Shopee Spend',   data:SHOPEE.map(m=>m.spend),   borderColor:'#EE4D2D', borderDash:[4,3], backgroundColor:'transparent', tension:.4, borderWidth:1.5, pointRadius:3, pointBackgroundColor:'#EE4D2D'},
+        {label:'Lazada Revenue', data:LZ.map(m=>m.revenue), borderColor:'#0F136D', backgroundColor:'rgba(15,19,109,0.06)', fill:true, tension:.4, borderWidth:2.5, pointRadius:4, pointBackgroundColor:'#0F136D'},
+        {label:'Lazada Spend',   data:LZ.map(m=>m.spend),   borderColor:'#0F136D', borderDash:[4,3], backgroundColor:'transparent', tension:.4, borderWidth:1.5, pointRadius:3, pointBackgroundColor:'#0F136D'},
+        {label:'FB Revenue',    data:FB.map(m=>m.revenue), borderColor:'#185FA5', backgroundColor:'rgba(24,95,165,0.06)', fill:false, tension:.4, borderWidth:2.5, pointRadius:4, pointBackgroundColor:'#185FA5'},
+        {label:'FB Spend',      data:FB.map(m=>m.spend),   borderColor:'#185FA5', borderDash:[4,3], backgroundColor:'transparent', tension:.4, borderWidth:1.5, pointRadius:3, pointBackgroundColor:'#185FA5'},
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:true, position:'bottom', labels:{boxWidth:10, font:{size:10}, color:tickColor, padding:8}}},
+      scales:{
+        y:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:10},callback:v=>'฿'+(v>=1000?Math.round(v/1000)+'K':v)},title:{display:true,text:'บาท',color:tickColor,font:{size:10}}},
+        x:{grid:{display:false},ticks:{color:tickColor,font:{size:11}}}
+      }
+    }
+  });
+
+  // ROAS Chart
+  const ctx2 = document.getElementById('roasChart').getContext('2d');
+  if(roasChart) roasChart.destroy();
+  roasChart = new Chart(ctx2, {
+    type:'line',
+    data:{
+      labels: MONTHS,
+      datasets:[
+        {label:'Shopee ROAS', data:SHOPEE.map(m=>m.roas), borderColor:'#EE4D2D', backgroundColor:'rgba(238,77,45,0.1)', fill:true, tension:.4, borderWidth:2.5, pointRadius:5, pointBackgroundColor:'#EE4D2D'},
+        {label:'Lazada ROAS', data:LZ.map(m=>m.roas),    borderColor:'#0F136D', backgroundColor:'rgba(15,19,109,0.08)', fill:true, tension:.4, borderWidth:2.5, pointRadius:5, pointBackgroundColor:'#0F136D'},
+        {label:'Facebook ROAS (tracked)', data:FB.map(m=>m.roas), borderColor:'#185FA5', backgroundColor:'rgba(24,95,165,0.06)', fill:false, tension:.4, borderWidth:2, pointRadius:5, pointBackgroundColor:'#185FA5', borderDash:[5,3]},
+        {label:'Benchmark 3x', data:MONTHS.map(()=>3), borderColor:'#ef4444', borderDash:[6,4], borderWidth:1.5, pointRadius:0, fill:false},
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:true, position:'bottom', labels:{boxWidth:10, font:{size:10}, color:tickColor, padding:8}}},
+      scales:{
+        y:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:10},callback:v=>v+'x'},title:{display:true,text:'ROAS',color:tickColor,font:{size:10}}},
+        x:{grid:{display:false},ticks:{color:tickColor,font:{size:11}}}
+      }
+    }
+  });
+}
+
+// TABLE
+function roasBadge(r){
+  if(r===null||r===undefined||r==='-'||r==='') return '<span class="roas-badge gray">—</span>';
+  const v = parseFloat(r);
+  if(isNaN(v)) return '<span class="roas-badge gray">—</span>';
+  if(v>=10) return `<span class="roas-badge green">${v.toFixed(1)}x ✅</span>`;
+  if(v>=3)  return `<span class="roas-badge yellow">${v.toFixed(1)}x ⚡</span>`;
+  return `<span class="roas-badge red">${v.toFixed(1)}x ⚠️</span>`;
+}
+
+function platBadge(p){
+  const m = {Facebook:'fb',Shopee:'sh',Lazada:'lz'};
+  const e = {Facebook:'📘',Shopee:'🛍️',Lazada:'🟠'};
+  return `<span class="plat-badge ${m[p]}">${e[p]||''} ${p}</span>`;
+}
+
+function renderTable(){
+  const plat = currentPlat;
+  const srch = document.getElementById('searchBox').value.toLowerCase();
+  const month = document.getElementById('tableMonthFilter').value;
+  let data = CAMPAIGNS.slice();
+  if(plat!=='all') data = data.filter(r=>r.platform===plat);
+  if(month!=='all') data = data.filter(r=>r.period===month);
+  if(srch) data = data.filter(r=>r.name.toLowerCase().includes(srch)||r.type.toLowerCase().includes(srch));
+  // Sort
+  data.sort((a,b)=>{
+    let va=a[sortCol], vb=b[sortCol];
+    if(va===null||va==='-'||va===undefined) va=-Infinity;
+    if(vb===null||vb==='-'||vb===undefined) vb=-Infinity;
+    va=parseFloat(va)||0; vb=parseFloat(vb)||0;
+    return (va-vb)*sortDir;
+  });
+  const rows = data.map(r=>`
+    <tr>
+      <td>${platBadge(r.platform)}</td>
+      <td class="num">${r.month}</td>
+      <td title="${r.name}">${r.name.length>42?r.name.slice(0,42)+'…':r.name}</td>
+      <td style="color:var(--muted);font-size:11px">${r.type}</td>
+      <td class="num">${fmt(r.spend)}</td>
+      <td class="num">${fmt(r.revenue)}</td>
+      <td>${roasBadge(r.roas)}</td>
+      <td class="num">${r.orders||0}</td>
+      <td class="num">${r.ctr||'—'}</td>
+      <td><span class="status-dot ${(r.status||'').toLowerCase().includes('กำลัง')||r.status==='active'?'active':'inactive'}"></span>${r.status==='active'?'Active':r.status}</td>
+    </tr>`).join('');
+  document.getElementById('campBody').innerHTML = rows || '<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--muted)">ไม่พบข้อมูล</td></tr>';
+  document.getElementById('row-count').textContent = `${data.length} แคมเปญ`;
+  document.getElementById('table-footer').textContent = `แสดง ${data.length} จาก ${CAMPAIGNS.length} รายการ`;
+}
+
+function sortBy(col){
+  if(sortCol===col) sortDir*=-1; else {sortCol=col; sortDir=-1;}
+  renderTable();
+}
+
+function setPlatFilter(plat, btn){
+  currentPlat = plat;
+  document.querySelectorAll('.pf-btn').forEach(b=>{b.classList.remove('active')});
+  btn.classList.add('active');
+  renderTable();
+}
+
+// KPI MONTH TAB SELECTOR
+function selectKpiMonth(period, btn){
+  document.querySelectorAll('#kpi-month-tabs .month-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  // Sync global dropdown
+  document.getElementById('globalMonthFilter').value = period;
+  onMonthChange(period);
+}
+
+// GLOBAL MONTH FILTER
+function onMonthChange(period){
+  renderKPIs(period);
+  buildBarChart(period);
+  buildDonutCharts(period);
+  // Sync KPI tabs
+  const tabPeriod = period;
+  document.querySelectorAll('#kpi-month-tabs .month-tab').forEach(btn=>{
+    const onclick = btn.getAttribute('onclick');
+    const match = onclick && onclick.match(/'([^']+)'/);
+    if(match) btn.classList.toggle('active', match[1]===tabPeriod);
+  });
+}
+
+// DARK MODE
+function toggleTheme(){
+  const th = document.documentElement.getAttribute('data-theme');
+  const next = th==='dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  document.querySelector('.theme-btn').textContent = next==='dark'?'☀️':'🌙';
+  buildTrendCharts();
+  buildBarChart(document.getElementById('globalMonthFilter').value);
+  buildDailyLazada();
+}
+
+// NAV HIGHLIGHT
+window.addEventListener('scroll',()=>{
+  const secs = ['kpi','comparison','trends','campaigns','insights'];
+  let active = secs[0];
+  secs.forEach(id=>{
+    const el = document.getElementById(id);
+    if(el && el.getBoundingClientRect().top <= 80) active=id;
+  });
+  document.querySelectorAll('.nav-links a').forEach(a=>{
+    a.classList.toggle('active', a.getAttribute('href')==='#'+active);
+  });
+});
+
+
+// ── DONUT CHARTS ─────────────────────────────────────────────────────────
+let donutSpendChart, donutRevChart;
+function buildDonutCharts(period){
+  const {sh,fb,lz} = getFiltered(period);
+  const shSp=sumField(sh,'spend'), fbSp=sumField(fb,'spend'), lzSp=sumField(lz,'spend');
+  const shRv=sumField(sh,'revenue'), fbRv=sumField(fb,'revenue'), lzRv=sumField(lz,'revenue');
+  const totalSp=shSp+fbSp+lzSp, totalRv=shRv+fbRv+lzRv;
+  const labels=['Facebook','Shopee','Lazada'], colors=['#185FA5','#EE4D2D','#0F136D'];
+
+  document.getElementById('donut-spend-sub').textContent = `${period==='all'?'ทั้ง 5 เดือน':MONTHS[PERIODS.indexOf(period)]} รวม ${fmt(totalSp)}`;
+  document.getElementById('donut-rev-sub').textContent   = `${period==='all'?'ทั้ง 5 เดือน':MONTHS[PERIODS.indexOf(period)]} รวม ${fmt(totalRv)}`;
+
+  function mkDonut(id, data, total, legendId){
+    const ctx = document.getElementById(id).getContext('2d');
+    const existing = Chart.getChart(id);
+    if(existing) existing.destroy();
+    new Chart(ctx,{
+      type:'doughnut',
+      data:{labels, datasets:[{data, backgroundColor:colors, borderWidth:2, borderColor:'var(--surface)', hoverOffset:6}]},
+      options:{responsive:true,maintainAspectRatio:false,cutout:'68%',
+        plugins:{legend:{display:false},tooltip:{callbacks:{label(c){const pct=(c.raw/total*100).toFixed(1); return ` ${c.label}: ${fmt(c.raw)} (${pct}%)`;}}}}}
+    });
+    document.getElementById(legendId).innerHTML = labels.map((l,i)=>`
+      <div class="donut-legend-row">
+        <div class="donut-legend-dot" style="background:${colors[i]}"></div>
+        <div class="donut-legend-label">${l}</div>
+        <div class="donut-legend-val">${(data[i]/total*100).toFixed(1)}%</div>
+        <div class="tb-spend">${fmt(data[i])}</div>
+      </div>`).join('');
+  }
+  mkDonut('donutSpend',[fbSp,shSp,lzSp],totalSp,'donut-spend-legend');
+  mkDonut('donutRevenue',[fbRv,shRv,lzRv],totalRv,'donut-rev-legend');
+}
+
+// ── TOP 5 / BOTTOM 5 ─────────────────────────────────────────────────────
+function renderTopBottom(){
+  const withRoas = CAMPAIGNS.filter(c=>c.roas!==null && c.roas!==undefined && parseFloat(c.roas)>0 && parseFloat(c.spend)>200);
+  const sorted = withRoas.slice().sort((a,b)=>parseFloat(b.roas)-parseFloat(a.roas));
+  const top5 = sorted.slice(0,5);
+  const bot5 = sorted.slice(-5).reverse();
+  const platCls = {Facebook:'fb',Shopee:'sh',Lazada:'lz'};
+  const mkRow = (c,i,isTop)=>`
+    <div class="tb-row">
+      <div class="tb-rank">${isTop?['🥇','🥈','🥉','4️⃣','5️⃣'][i]:['⚠️','⚠️','⚠️','⚠️','⚠️'][i]}</div>
+      <div class="tb-info">
+        <div class="tb-name" title="${c.name}">${c.name.length>38?c.name.slice(0,38)+'…':c.name}</div>
+        <div class="tb-plat"><span class="plat-badge ${platCls[c.platform]}" style="font-size:10px;padding:1px 5px">${c.platform}</span> ${c.month}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="tb-val" style="color:${isTop?'var(--green)':'var(--red)'}">${parseFloat(c.roas).toFixed(1)}x</div>
+        <div class="tb-spend">${fmt(c.spend)}</div>
+      </div>
+    </div>`;
+  document.getElementById('tb-grid').innerHTML = `
+    <div class="tb-card">
+      <div class="tb-title" style="color:var(--green)">🏆 Top 5 ROAS Campaigns</div>
+      ${top5.map((c,i)=>mkRow(c,i,true)).join('')}
+    </div>
+    <div class="tb-card">
+      <div class="tb-title" style="color:var(--red)">🔻 Bottom 5 ROAS Campaigns</div>
+      ${bot5.map((c,i)=>mkRow(c,i,false)).join('')}
+    </div>`;
+}
+
+// ── DAILY LAZADA CHART ────────────────────────────────────────────────────
+let dailyLzChart, currentDailyMetric = 'rv';
+const PERIOD_COLORS = {'2025-12':'#185FA5','2026-01':'#0F136D','2026-02':'#5D4AB7','2026-03':'#EE4D2D','2026-04':'#10b981'};
+const PERIOD_NAMES  = {'2025-12':'ธ.ค 25','2026-01':'ม.ค 26','2026-02':'ก.พ 26','2026-03':'มี.ค 26','2026-04':'เม.ย 26'};
+
+function buildDailyLazada(metric){
+  currentDailyMetric = metric || currentDailyMetric;
+  const isDark = document.documentElement.getAttribute('data-theme')==='dark';
+  const tickColor = isDark?'#8b949e':'#64748b';
+  const gridColor = isDark?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.06)';
+  const metricLabel = {rv:'Revenue (฿)',sp:'Spend (฿)',od:'Orders'};
+  const metricFmt = {rv:v=>'฿'+(v>=1000?Math.round(v/1000)+'K':v),sp:v=>'฿'+(v>=1000?Math.round(v/1000)+'K':v),od:v=>v};
+
+  const datasets = Object.keys(PERIOD_COLORS).map(period=>{
+    const days = LZ_DAILY.filter(d=>d.p===period);
+    const color = PERIOD_COLORS[period];
+    return {
+      label: PERIOD_NAMES[period],
+      data: days.map(d=>d[currentDailyMetric]),
+      borderColor: color,
+      backgroundColor: color+'18',
+      fill: false,
+      tension: 0.3,
+      borderWidth: 2,
+      pointRadius: 2,
+      pointHoverRadius: 5,
+    };
+  });
+
+  const allLabels = LZ_DAILY.map(d=>d.d.slice(5));
+  const ctx = document.getElementById('dailyLazadaChart').getContext('2d');
+  if(dailyLzChart) dailyLzChart.destroy();
+  dailyLzChart = new Chart(ctx,{
+    type:'line',
+    data:{labels: allLabels, datasets},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,callbacks:{label(c){return ` ${c.dataset.label}: ${c.dataset.label==='Orders'?c.raw:'฿'+c.raw.toLocaleString()}`;}}}},
+      scales:{
+        x:{grid:{display:false},ticks:{color:tickColor,font:{size:9},maxRotation:0,maxTicksLimit:20}},
+        y:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:10},callback:metricFmt[currentDailyMetric]},title:{display:true,text:metricLabel[currentDailyMetric],color:tickColor,font:{size:10}}}
+      }
+    }
+  });
+
+  const leg = Object.entries(PERIOD_COLORS).map(([p,c])=>`<div class="legend-item"><div class="legend-line" style="background:${c}"></div>${PERIOD_NAMES[p]}</div>`).join('');
+  document.getElementById('daily-month-legend').innerHTML = leg;
+}
+
+function setDailyMetric(metric, btn){
+  document.querySelectorAll('.daily-metric-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  buildDailyLazada(metric);
+}
+
+// INIT
+renderKPIs('all');
+buildBarChart('all');
+buildTrendCharts();
+buildDonutCharts('all');
+renderTopBottom();
+buildDailyLazada('rv');
+renderTable();
+</script>
+</body>
+</html>
